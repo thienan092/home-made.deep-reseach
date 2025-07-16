@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Deep Research</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Marked.js to render Markdown from Gemini -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Lucide Icons for UI elements -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar for a cleaner look */
+        #chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 3px;
+        }
+        #chat-container::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .api-key-input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+        }
+        .api-key-input:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 2px #c7d2fe;
+        }
+        /* Styling for Markdown content */
+        .prose p { margin-bottom: 1rem; }
+        .prose ul { list-style-position: inside; }
+        .prose li { margin-bottom: 0.5rem; }
+        .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 { margin-top: 1.5rem; margin-bottom: 1rem; font-weight: 600; }
+        .prose h1 { font-size: 1.875rem; }
+        .prose h2 { font-size: 1.5rem; }
+        .prose h3 { font-size: 1.25rem; }
+        .prose code { background-color: #e2e8f0; padding: 0.2em 0.4em; border-radius: 0.25rem; font-size: 0.875em; }
+        .prose pre { background-color: #1e293b; color: #f8fafc; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        .prose a { color: #4f46e5; text-decoration: underline; }
+
+
+        /* CSS for the loading spinner */
+        
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        .loader {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid #4f46e5;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes nhap-nhay-cham {
+            0% { content: ''; }
+            25% { content: '.'; }
+            50% { content: '..'; }
+            75% { content: '...'; }
+            100% { content: ''; }
+        }
+
+        .hieu-ung-cham::after {
+            content: '';
+            animation: nhap-nhay-cham 1.5s infinite steps(1);
+            display: inline-block;
+            width: 1.5em;
+            text-align: left;
+        }
+
+        /* Styles for the receiver iframe container */
+        #receiver-container {
+            position: fixed; /* Always fixed for these states */
+            right: 0;
+            top: 0;
+            height: 100vh;
+            background-color: #f0f2f5;
+            box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+            transition: width 0.3s ease-in-out, padding 0.3s ease-in-out, left 0.3s ease-in-out, right 0.3s ease-in-out; /* Transition all relevant properties */
+            display: flex;
+            flex-direction: column;
+            z-index: 9999; /* Above bookmark tab */
+            padding: 1rem; /* Default padding for partial/fullscreen */
+            border-radius: 0; /* No border-radius for the main container */
+            overflow: hidden; /* Prevent content overflow during transitions */
+        }
+
+        /* State-specific widths */
+        #receiver-container.state-bookmark {
+            width: 0; /* Hidden, only bookmark tab visible */
+            padding: 0; /* No padding when hidden */
+            left: auto; /* Ensure it stays on the right */
+            right: 0;
+        }
+
+        #receiver-container.state-partial {
+            width: 20vw; /* 1/5 screen width */
+            left: auto; /* Ensure it stays on the right */
+            right: 0;
+        }
+
+        #receiver-container.state-fullscreen {
+            width: 100vw;
+            left: 0; /* Ensure it takes full width from left */
+            right: 0; /* Ensure it takes full width to right */
+            padding: 0; /* Ensure no padding in fullscreen */
+        }
+
+        /* Iframe visibility */
+        #receiver-iframe {
+            width: 100%;
+            flex-grow: 1; /* Make it fill remaining height */
+            border: none;
+            background-color: white; /* Ensure iframe background is white */
+            transition: opacity 0.3s ease-in-out; /* Add transition for opacity */
+        }
+
+        /* Headers */
+        #receiver-container .receiver-header {
+            display: none; /* Hidden by default */
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem; /* Add padding below header */
+            background-color: #1e293b; /* Dark header for fullscreen */
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: -1rem -1rem 1rem -1rem; /* Adjust for container padding */
+            padding: 1rem;
+            border-top-right-radius: 0.75rem; /* Rounded corners for header */
+            border-top-left-radius: 0.75rem;
+        }
+
+        #receiver-container.state-fullscreen .receiver-header {
+            display: flex; /* Show in fullscreen */
+        }
+
+        /* Styles for the bookmark tab */
+        #iframe-bookmark-tab {
+            position: fixed;
+            right: 0; /* Initial position */
+            top: 50%;
+            transform: translateY(-50%);
+            width: 48px; /* Small width for the tab */
+            height: 100px; /* Height of the tab */
+            background-color: rgba(66, 153, 225, 0.7); /* Blue, slightly opaque */
+            border-top-left-radius: 10px;
+            border-bottom-left-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 9998; /* Below fullscreen, above chat */
+            transition: right 0.3s ease-in-out, background-color 0.3s ease-in-out, opacity 0.3s ease-in-out; /* Add right to transition */
+            box-shadow: -2px 0 5px rgba(0,0,0,0.2);
+        }
+
+        #iframe-bookmark-tab:hover {
+            background-color: rgba(66, 153, 225, 0.9); /* Slightly less opaque on hover */
+        }
+
+        /* Custom animation for the bar chart icon (retained from original index.html) */
+        @keyframes bar-animation {
+            0%, 100% { transform: translateY(0); opacity: 1; }
+            50% { transform: translateY(-4px); opacity: 0.8; }
+        }
+
+        #send-receiver-size-btn:hover .bar-1,
+        #send-receiver-size-btn:hover .bar-2,
+        #send-receiver-size-btn:hover .bar-3 {
+            animation: bar-animation 1s ease-in-out infinite;
+        }
+
+        #send-receiver-size-btn:hover .bar-1 {
+            animation-delay: 0s;
+        }
+        #send-receiver-size-btn:hover .bar-2 {
+            animation-delay: 0.2s;
+        }
+        #send-receiver-size-btn:hover .bar-3 {
+            animation-delay: 0.4s;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="max-w-4xl w-full mx-auto p-4 flex-grow flex flex-col">
+        <!-- Header and API Key Section -->
+        <div class="bg-white p-4 rounded-xl shadow-md mb-4 border border-slate-200">
+            <div class="flex items-center justify-between mb-4">
+                <h1 class="text-2xl font-bold text-slate-800">Deep Research Engine</h1>
+                <div class="flex items-center gap-3">
+                    <!-- Research Mode Selector -->
+                    <div class="relative">
+                        <select id="research-mode-select" class="block appearance-none w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 pr-8 rounded-lg leading-tight focus:outline-none focus:bg-white focus:border-indigo-500">
+                            <option value="limited">Limited (Tìm kiếm hạn chế)</option>
+                            <option value="unlimited">Unlimited (Tìm kiếm mở rộng)</option>
+                            <option value="backend">Back-end (Crawl sâu)</option>
+                            <option value="quota">Quota (Dữ liệu Gemini)</option>
+                            <option value="quota-backend">Quota (Back-end mô phỏng)</option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-700">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9z"/></svg>
+                        </div>
+                    </div>
+                    <button id="toggle-keys-btn" class="text-slate-500 hover:text-slate-800">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round"><path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/><circle cx="16.5" cy="7.5" r=".5"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="api-keys-section" class="mt-4 space-y-3 hidden">
+                <div>
+                    <label for="gemini-api-key" class="text-sm font-medium text-slate-600">Gemini Flash API Key</label>
+                    <input type="password" id="gemini-api-key" class="api-key-input" placeholder="Vui lòng nhập Gemini API Key của bạn (tùy chọn)">
+                    <p class="text-xs text-slate-500 mt-1">Lấy Gemini API Key tại: <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-indigo-600 hover:underline">Google AI Studio</a> (Nếu để trống, Canvas sẽ tự động cung cấp)</p>
+                </div>
+                <div>
+                    <label for="google-api-key" class="text-sm font-medium text-slate-600">Google Search API Key</label>
+                    <input type="password" id="google-api-key" class="api-key-input" placeholder="Nhập Google Search API Key của bạn">
+                    <p class="text-xs text-slate-500 mt-1">Lấy Google Search API Key (và bật Custom Search API) tại: <a href="https://console.developers.google.com/apis/credentials" target="_blank" class="text-indigo-600 hover:underline">Google Cloud Console</a></p>
+                </div>
+                <div>
+                    <label for="google-cx" class="text-sm font-medium text-slate-600">Google Search Engine ID (CX)</label>
+                    <input type="text" id="google-cx" class="api-key-input" placeholder="Nhập Search Engine ID (CX) của bạn">
+                    <p class="text-xs text-slate-500 mt-1">Tạo Search Engine ID (CX) tại: <a href="https://programmablesearchengine.google.com/controlpanel/all" target="_blank" class="text-indigo-600 hover:underline">Google Programmable Search Engine</a> (Chọn tìm kiếm "Toàn bộ web")</p>
+                </div>
+                <p class="text-xs text-slate-500">API Keys được lưu trữ trong trình duyệt và không được gửi đi bất cứ đâu ngoại trừ các API của Google.</p>
+            </div>
+        </div>
+
+        <!-- Chat Container -->
+        <div id="chat-container" class="flex-grow bg-white rounded-xl shadow-md p-6 overflow-y-auto border border-slate-200">
+            <!-- Messages will be appended here -->
+            <div class="flex items-start gap-3">
+                <div class="bg-indigo-600 p-2 rounded-full flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucude-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
+                </div>
+                <div class="bg-slate-100 text-slate-800 rounded-lg p-3 max-w-full">
+                    <p class="font-semibold mb-2">Xin chào! Tôi có thể giúp gì cho bạn?</p>
+                    <p class="text-sm">Vui lòng nhập <span class="font-bold">Google Search API Key</span> và <span class="font-bold">Search Engine ID (CX)</span> của bạn bằng cách nhấn vào biểu tượng chìa khóa ở trên, nếu bạn muốn sử dụng các chế độ tìm kiếm "Limited", "Unlimited" hoặc "Backend".</p>
+                    <p class="text-sm mt-2">Chọn chế độ nghiên cứu mong muốn (mặc định là "Limited").</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Form -->
+        <div class="mt-4">
+            <form id="chat-form" class="flex items-center gap-3">
+                <input type="text" id="chat-input" class="flex-grow p-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none transition" placeholder="Đặt một câu hỏi phức tạp..." autocomplete="off">
+                <button type="submit" id="send-button" class="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition disabled:bg-indigo-300 disabled:cursor-not-allowed">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receiver iframe section (initially in bookmark state) -->
+    <div id="receiver-container" class="bg-white p-6 rounded-xl shadow-md border border-slate-200 mt-4 state-bookmark">
+        <!-- Header for fullscreen mode -->
+        <div class="receiver-header">
+            <h2 class="text-xl font-bold">Trang Receiver Host</h2>
+            <button id="close-receiver-btn" class="text-white hover:text-gray-300">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <iframe id="receiver-iframe" src="https://data-phinter.onrender.com/" title="Receiver Host" class="w-full h-full border-none rounded-lg"></iframe>
+    </div>
+
+    <!-- Iframe Bookmark Tab -->
+    <div id="iframe-bookmark-tab" class="fixed right-0 top-1/2 -translate-y-1/2 w-12 h-24 bg-blue-600 text-white flex items-center justify-center rounded-l-lg shadow-lg cursor-pointer z-[9998] transition-all duration-300 ease-in-out group">
+    </div>
+
+    <script type="module">
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const chatContainer = document.getElementById('chat-container');
+        
+        const geminiApiKeyInput = document.getElementById('gemini-api-key');
+        const googleApiKeyInput = document.getElementById('google-api-key');
+        const googleCxInput = document.getElementById('google-cx');
+        const toggleKeysBtn = document.getElementById('toggle-keys-btn');
+        const apiKeysSection = document.getElementById('api-keys-section');
+        const researchModeSelect = document.getElementById('research-mode-select');
+        
+        // New elements for receiver iframe control
+        const receiverContainer = document.getElementById('receiver-container');
+        const receiverFullscreenHeader = receiverContainer.querySelector('.receiver-header');
+        const iframeBookmarkTab = document.getElementById('iframe-bookmark-tab'); // The new bookmark tab
+        const receiverIframe = document.getElementById('receiver-iframe'); 
+
+        let citationsData = []; // Array to store structured citation data
+        let cau_thu = 0; // Counter for unique IDs, used for citation download button
+
+        let currentIframeState = 'bookmark'; // Initial state
+
+        let isDragging = false;
+        let startX;
+        let startIframeWidth; // Store iframe width at start of drag
+        const PARTIAL_WIDTH_VW = 20; // 1/5 of viewport width
+        const DRAG_THRESHOLD_FULLSCREEN_VW = 30; // If dragged beyond 30vw, go fullscreen
+        const DRAG_THRESHOLD_BOOKMARK_VW = 5; // If dragged below 5vw, go to bookmark
+
+        // Function to update iframe state
+        function setIframeState(newState, disableTransition = false) {
+            console.log(`Setting iframe state to: ${newState}, disableTransition: ${disableTransition}`);
+            if (disableTransition) {
+                receiverContainer.style.transition = 'none';
+                iframeBookmarkTab.style.transition = 'none';
+            } else {
+                receiverContainer.style.transition = 'width 0.3s ease-in-out, padding 0.3s ease-in-out, left 0.3s ease-in-out, right 0.3s ease-in-out';
+                iframeBookmarkTab.style.transition = 'right 0.3s ease-in-out, background-color 0.3s ease-in-out, opacity 0.3s ease-in-out';
+            }
+
+            receiverContainer.classList.remove('state-bookmark', 'state-partial', 'state-fullscreen');
+            receiverContainer.classList.add(`state-${newState}`);
+            currentIframeState = newState;
+
+            // Manage visibility of the fullscreen header
+            if (newState === 'fullscreen') {
+                receiverFullscreenHeader.style.display = 'flex';
+                iframeBookmarkTab.style.display = 'none'; // Hide bookmark tab in fullscreen
+            } else { // partial or bookmark
+                receiverFullscreenHeader.style.display = 'none';
+                iframeBookmarkTab.style.display = 'flex'; // Show bookmark tab otherwise
+            }
+
+            // Manage position of the bookmark tab and iframe width
+            if (newState === 'partial') {
+                iframeBookmarkTab.style.right = `${PARTIAL_WIDTH_VW}vw`; // Bookmark tab sticks to iframe's left edge (relative to screen right)
+                receiverContainer.style.width = `${PARTIAL_WIDTH_VW}vw`; // Ensure iframe width is also set for partial state
+            } else if (newState === 'bookmark') {
+                iframeBookmarkTab.style.right = '0'; // Back to the edge
+                receiverContainer.style.width = '0'; // Ensure iframe width is 0 for bookmark state
+            } else { // fullscreen
+                 // In fullscreen, iframeBookmarkTab is hidden by the first if block
+            }
+
+            // Ensure iframe content is visible only when not in bookmark state
+            if (newState === 'bookmark') {
+                receiverIframe.style.opacity = '0';
+                receiverIframe.style.pointerEvents = 'none'; /* Disable interactions */
+            } else {
+                receiverIframe.style.opacity = '1';
+                receiverIframe.style.pointerEvents = 'auto'; /* Enable interactions */
+            }
+            lucide.createIcons(); // Re-render icons after DOM manipulation
+        }
+
+
+        // Load keys from localStorage if they exist
+        geminiApiKeyInput.value = localStorage.getItem('geminiApiKey') || '';
+        googleApiKeyInput.value = localStorage.getItem('googleApiKey') || '';
+        googleCxInput.value = localStorage.getItem('googleCx') || '';
+        researchModeSelect.value = localStorage.getItem('researchMode') || 'limited'; // Load selected mode
+
+        // Save keys and mode to localStorage on change
+        geminiApiKeyInput.addEventListener('input', () => localStorage.setItem('geminiApiKey', geminiApiKeyInput.value));
+        googleApiKeyInput.addEventListener('input', () => localStorage.setItem('googleApiKey', googleApiKeyInput.value));
+        googleCxInput.addEventListener('input', () => localStorage.setItem('googleCx', googleCxInput.value));
+        researchModeSelect.addEventListener('change', () => localStorage.setItem('researchMode', researchModeSelect.value));
+
+        toggleKeysBtn.addEventListener('click', () => {
+            apiKeysSection.classList.toggle('hidden');
+        });
+
+        // Function to get yesterday's date in Vietnamese format
+        function getYesterdayDateInVietnamese() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1); // Subtract 1 day to get yesterday
+            
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const formatter = new Intl.DateTimeFormat('vi-VN', options);
+            let dateString = formatter.format(yesterday); // Get the formatted date string
+
+            // Capitalize the first letter of the weekday (e.g., "thứ hai" -> "Thứ hai")
+            dateString = dateString.charAt(0).toUpperCase() + dateString.slice(1);
+
+            return dateString;
+        }
+
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userInput = chatInput.value.trim();
+            if (!userInput) return;
+
+            const geminiApiKey = geminiApiKeyInput.value; // This will be empty if user relies on Canvas auto-injection
+            const googleApiKey = googleApiKeyInput.value;
+            const googleCx = googleCxInput.value;
+            const selectedMode = researchModeSelect.value;
+
+            console.log('Debugging API Key Check:');
+            console.log('googleApiKey:', googleApiKey);
+            console.log('googleCx:', googleCx);
+            console.log('selectedMode:', selectedMode);
+
+            // Check if Google Search API keys are missing
+            if (!googleApiKey || !googleCx) {
+                // If user is trying to use a mode that requires Google Search API keys
+                if (selectedMode !== 'quota' && selectedMode !== 'quota-backend') {
+                    renderMessage(
+                        `<p class="font-semibold text-red-600">Lỗi API Key Google Search</p><p>Để sử dụng chế độ "${selectedMode}", bạn cần cung cấp cả Google Search API Key và Search Engine ID (CX) của bạn.</p><p class="mt-2">Bạn có muốn chuyển sang chế độ "Quota" hoặc "Quota (Back-end)" để tiếp tục mà không cần API Key Google Search không? Vui lòng chọn một trong hai chế độ này từ danh sách thả xuống.</p>`, 
+                        'system_error'
+                    );
+                    apiKeysSection.classList.remove('hidden'); // Show API key section
+                    googleApiKeyInput.focus(); // Still focus on API key input for context
+                    setLoadingState(false); // Ensure loading state is off
+                    return;
+                }
+                // If selectedMode IS 'quota' or 'quota-backend', then it's fine to proceed without Google Search API keys.
+                // No explicit message needed here, as it's the expected behavior.
+            }
+
+            // Reset citations data for new query
+            citationsData = [];
+
+            chatInput.value = '';
+            setLoadingState(true);
+            renderMessage(userInput, 'user');
+
+            try {
+                const yesterdayDate = getYesterdayDateInVietnamese(); // Get yesterday's date
+
+                // --- STEP 1: DECOMPOSE QUESTION AND IDENTIFY SCHEMA ---
+                const thinkingMessage = renderMessage('', 'system_thinking', true);
+                updateMessage(thinkingMessage, `
+                    <div class="flex items-center gap-2">
+                        <div class="loader"></div>
+                        <span class="hieu-ung-cham">Đang phân tích câu hỏi, lập kế hoạch tìm kiếm và nhận diện cấu trúc dữ liệu...</span>
+                    </div>
+                `);
+
+                // Updated prompt to identify desired output schema and potentially disambiguate
+                const decompositionPrompt = `
+                    Bạn là một trợ lý nghiên cứu chuyên nghiệp, có khả năng tự đánh giá và tối ưu hóa quy trình.
+                    Nhiệm vụ của bạn là phân tích câu hỏi của người dùng và tạo ra 3 đến 5 truy vấn tìm kiếm Google đơn giản, hiệu quả để thu thập thông tin cần thiết nhằm cung cấp một câu trả lời toàn diện.
+                    
+                    **Nguyên tắc tự đánh giá và tối ưu:**
+                    - Nếu câu hỏi của người dùng chỉ định một cấu trúc dữ liệu đầu ra cụ thể (ví dụ: "theo cấu trúc sau: ID,Sản phẩm,Thương hiệu,..."), hãy trích xuất các tiêu đề cột này.
+                    - Nếu câu hỏi có vẻ đa nghĩa (ví dụ: "AAA"), hãy đề xuất các ý nghĩa tiềm năng và tạo truy vấn cho từng ý nghĩa đó, hoặc nếu có thể, hãy hỏi người dùng để làm rõ. (Lưu ý: Trong môi trường hiện tại, việc hỏi người dùng trực tiếp là khó, hãy ưu tiên tạo truy vấn cho các nghĩa phổ biến).
+                    - Đảm bảo các truy vấn tìm kiếm đủ rộng để bao quát chủ đề nhưng cũng đủ cụ thể để mang lại kết quả liên quan.
+
+                    Câu hỏi của người dùng bằng tiếng Việt. Các truy vấn tìm kiếm của bạn cũng phải bằng tiếng Việt.
+                    Nếu câu hỏi của người dùng liên quan đến một khung thời gian cụ thể (ví dụ: "hôm qua", "tuần trước", "năm 2023"), hãy sử dụng thông tin về ngày tháng đó trong các truy vấn của bạn.
+                    Ngày hôm qua là: "${yesterdayDate}".
+                    
+                    Trả về CHỈ một đối tượng JSON hợp lệ với các khóa sau:
+                    - "queries": một mảng các chuỗi truy vấn tìm kiếm.
+                    - "output_schema": một mảng các chuỗi tiêu đề cột nếu người dùng yêu cầu cấu trúc cụ thể, nếu không thì là một mảng rỗng.
+                    - "analysis": (Tùy chọn) Một chuỗi mô tả ngắn gọn về cách bạn phân tích câu hỏi và chiến lược tìm kiếm/trích xuất của bạn, đặc biệt nếu câu hỏi đa nghĩa hoặc phức tạp.
+
+                    Không thêm bất kỳ văn bản hoặc giải thích nào khác ngoài đối tượng JSON.
+
+                    Câu hỏi của người dùng: "${userInput}"
+                `;
+
+                const decompositionResponse = await callGemini(decompositionPrompt, geminiApiKey, true);
+                const searchQueries = decompositionResponse.queries;
+                const desiredSchemaHeaders = decompositionResponse.output_schema;
+                const analysis = decompositionResponse.analysis || '';
+                
+                let queriesHtml = searchQueries.map(q => `<li><code class="bg-slate-200 px-1 py-0.5 rounded">${q}</code></li>`).join('');
+                let schemaHtml = '';
+                if (desiredSchemaHeaders && desiredSchemaHeaders.length > 0) {
+                    schemaHtml = `<p class="font-semibold mt-3 mb-2">Cấu trúc dữ liệu mong muốn:</p><ul class="list-disc list-inside mt-2 space-y-1">${desiredSchemaHeaders.map(h => `<li><code class="bg-slate-200 px-1 py-0.5 rounded">${h}</code></li>`).join('')}</ul>`;
+                }
+                let analysisHtml = analysis ? `<p class="font-semibold mt-3 mb-2">Phân tích nội bộ:</p><p class="text-sm italic">${analysis}</p>` : '';
+
+                updateMessage(thinkingMessage, `
+                    <p class="font-semibold mb-2">Kế hoạch nghiên cứu:</p>
+                    <p>Để trả lời câu hỏi của bạn, tôi sẽ tìm kiếm các chủ đề sau:</p>
+                    <ul class="list-disc list-inside mt-2 space-y-1">${queriesHtml}</ul>
+                    ${schemaHtml}
+                    ${analysisHtml}
+                `);
+
+
+                // --- STEP 2: EXECUTE WEB SEARCHES / CRAWL / GEMINI GENERATION & EXTRACT ---
+                const searchingMessage = renderMessage('', 'system_searching', true);
+                updateMessage(searchingMessage, `
+                    <div class="flex items-center gap-2">
+                        <div class="loader"></div>
+                        <span class="hieu-ung-cham">Đang tìm kiếm/crawl thông tin trên web và trích xuất dữ liệu...</span>
+                    </div>
+                `);
+                
+                let rawSearchResults = []; // Store raw snippets or crawled content for extraction
+                const processedUrls = new Set(); // To prevent duplicate URLs
+
+                if (selectedMode === 'quota-backend') {
+                    // Quota (Back-end) mode: Use Gemini to simulate both search results and crawled content
+                    updateMessage(searchingMessage, `
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="gem" class="w-4 h-4 text-slate-500"></i>
+                            <span class="hieu-ung-cham">Đang tạo kết quả tìm kiếm và nội dung trang mô phỏng bằng Gemini (Chế độ Quota - Back-end)...</span>
+                        </div>
+                    `);
+                    let sourceCounter = 0;
+                    for (const query of searchQueries) {
+                        // Simulate Google Search results (title, snippet, URL)
+                        const geminiSearchPrompt = `
+                            Bạn là một công cụ tìm kiếm. Vui lòng cung cấp 1-2 kết quả tìm kiếm có liên quan nhất cho truy vấn "${query}". Mỗi kết quả phải bao gồm tiêu đề, đoạn trích ngắn gọn (snippet), và một URL giả định. Định dạng phản hồi của bạn dưới dạng một mảng JSON như sau:
+                            [
+                              {
+                                "title": "Tiêu đề kết quả 1",
+                                "snippet": "Đây là một đoạn tóm tắt ngắn gọn về kết quả tìm kiếm đầu tiên.",
+                                "url": "https://example.com/trang1"
+                              }
+                            ]
+                            Hãy đảm bảo các URL là duy nhất và có vẻ hợp lý.
+                        `;
+                        const geminiGeneratedSearchResults = await callGemini(geminiSearchPrompt, geminiApiKey, true);
+
+                        if (geminiGeneratedSearchResults && Array.isArray(geminiGeneratedSearchResults)) {
+                            for (const item of geminiGeneratedSearchResults) {
+                                if (processedUrls.has(item.url)) {
+                                    console.log(`URL mô phỏng đã được xử lý, bỏ qua: ${item.url}`);
+                                    continue;
+                                }
+                                processedUrls.add(item.url);
+
+                                sourceCounter++;
+                                const currentSourceId = `S${sourceCounter}`;
+                                updateMessage(searchingMessage, `
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="file-text" class="w-4 h-4 text-slate-500"></i>
+                                        <span class="hieu-ung-cham">Đang tạo nội dung trang mô phỏng [${currentSourceId}]: <a href="${item.url}" target="_blank" class="text-indigo-600 hover:underline">${item.url.substring(0, 50)}...</a></span>
+                                    </div>
+                                `);
+
+                                // Simulate crawled content using Gemini
+                                const simulatedCrawlPrompt = `
+                                    Bạn là một công cụ mô phỏng nội dung trang web. Dựa trên tiêu đề, đoạn trích và URL giả định của một kết quả tìm kiếm, hãy tạo ra một đoạn văn bản dài hơn (khoảng 300-500 từ) mà trông giống như nội dung đầy đủ của một trang web liên quan. Nội dung này phải mở rộng thông tin từ đoạn trích và có vẻ hợp lý với tiêu đề và URL.
+                                    
+                                    Câu hỏi gốc của người dùng: "${userInput}"
+                                    Tiêu đề kết quả tìm kiếm: "${item.title}"
+                                    Đoạn trích kết quả tìm kiếm: "${item.snippet}"
+                                    URL giả định: "${item.url}"
+
+                                    Vui lòng trả về CHỈ nội dung văn bản mô phỏng, không thêm bất kỳ định dạng JSON hoặc giải thích nào khác.
+                                `;
+                                const simulatedContent = await callGemini(simulatedCrawlPrompt, geminiApiKey, false);
+
+                                // Extract structured information from simulated content
+                                const extractedInfo = await extractStructuredInfo(
+                                    userInput,
+                                    query, // Use original query for extraction context
+                                    simulatedContent,
+                                    item.url,
+                                    currentSourceId,
+                                    geminiApiKey,
+                                    desiredSchemaHeaders
+                                );
+                                
+                                if (extractedInfo) {
+                                    citationsData.push(extractedInfo);
+                                    const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || item.snippet || 'Không thể tóm tắt nội dung chính từ nguồn này.';
+                                    renderMessage(`
+                                        <p class="font-semibold mb-1">Nhận định về trang mô phỏng [${extractedInfo.ID || currentSourceId}]:</p>
+                                        <p class="text-sm">${displaySummary}</p>
+                                        <p class="text-xs text-slate-500 mt-1">Nguồn: <a href="${extractedInfo['Nguồn trích dẫn'] || item.url}" target="_blank" class="text-indigo-600 hover:underline">${extractedInfo['Nguồn trích dẫn'] || item.url}</a></p>
+                                    `, 'system_thinking');
+                                    rawSearchResults.push({
+                                        title: extractedInfo['Tóm tắt nội dung chính'] || `Nội dung từ: ${item.url}`,
+                                        link: item.url,
+                                        snippet: extractedInfo['Tóm tắt nội dung chính'] || simulatedContent.substring(0, 200),
+                                        id: extractedInfo.ID || currentSourceId
+                                    });
+                                } else {
+                                    renderMessage(`
+                                        <p class="font-semibold text-red-600">Lỗi trích xuất [${currentSourceId}]:</p>
+                                        <p class="text-sm">Không thể trích xuất thông tin có cấu trúc từ nội dung mô phỏng của <a href="${item.url}" target="_blank" class="text-indigo-600 hover:underline">${item.url.substring(0, 50)}...</a>.</p>
+                                    `, 'system_error');
+                                }
+                                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay
+                            }
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 200)); // Small delay between queries
+                    }
+
+                } else if (selectedMode === 'quota') {
+                    // Quota mode: Use Gemini to generate simulated search results
+                    updateMessage(searchingMessage, `
+                        <div class="flex items-center gap-2">
+                            <i data-lucide="gem" class="w-4 h-4 text-slate-500"></i>
+                            <span class="hieu-ung-cham">Đang tạo kết quả tìm kiếm bằng Gemini (Chế độ Quota)...</span>
+                        </div>
+                    `);
+                    const geminiSearchPrompt = `
+                        Bạn là một công cụ tìm kiếm. Vui lòng cung cấp 3-5 kết quả tìm kiếm có liên quan nhất cho truy vấn "${userInput}". Mỗi kết quả phải bao gồm tiêu đề, đoạn trích ngắn gọn (snippet), và một URL giả định. Định dạng phản hồi của bạn dưới dạng một mảng JSON như sau:
+                        [
+                          {
+                            "title": "Tiêu đề kết quả 1",
+                            "snippet": "Đây là một đoạn tóm tắt ngắn gọn về kết quả tìm kiếm đầu tiên.",
+                            "url": "https://example.com/trang1"
+                          },
+                          {
+                            "title": "Tiêu đề kết quả 2",
+                            "snippet": "Một đoạn trích khác cho kết quả thứ hai, cung cấp thêm thông tin.",
+                            "url": "https://anothersite.org/tai-lieu2"
+                          }
+                        ]
+                        Hãy đảm bảo các URL là duy nhất và có vẻ hợp lý.
+                    `;
+                    const geminiGeneratedResults = await callGemini(geminiSearchPrompt, geminiApiKey, true);
+
+                    let sourceCounter = 0;
+                    if (geminiGeneratedResults && Array.isArray(geminiGeneratedResults)) {
+                        for (const item of geminiGeneratedResults) {
+                            sourceCounter++;
+                            const currentSourceId = `S${sourceCounter}`;
+                            // Treat Gemini-generated item as a source
+                            const extractedInfo = await extractStructuredInfo(
+                                userInput,
+                                userInput, // Use user input as query for extraction context
+                                item.snippet,
+                                item.url,
+                                currentSourceId,
+                                geminiApiKey,
+                                desiredSchemaHeaders
+                            );
+
+                            if (extractedInfo) {
+                                citationsData.push(extractedInfo);
+                                const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || item.snippet || 'Không thể tóm tắt nội dung chính từ nguồn này.';
+                                rawSearchResults.push({
+                                    title: item.title,
+                                    link: item.link,
+                                    snippet: item.snippet,
+                                    id: extractedInfo.ID || currentSourceId
+                                });
+                            } else {
+                                console.warn(`Không thể trích xuất thông tin có cấu trúc từ kết quả Gemini: ${item.url}`);
+                                rawSearchResults.push({
+                                    title: item.title,
+                                    link: item.link,
+                                    snippet: item.snippet,
+                                    id: currentSourceId
+                                });
+                            }
+                        }
+                    } else {
+                        renderMessage(`
+                            <p class="font-semibold text-red-600">Lỗi Gemini Quota Mode:</p>
+                            <p class="text-sm">Gemini không trả về kết quả tìm kiếm mô phỏng hợp lệ.</p>
+                        `, 'system_error');
+                    }
+
+                } else if (selectedMode === 'backend') {
+                    // Backend mode: Get URLs from Google Search, then crawl each URL
+                    let sourceCounter = 0;
+                    for (const query of searchQueries) {
+                        updateMessage(searchingMessage, `
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-500"></i>
+                                <span class="hieu-ung-cham">Tìm kiếm URL cho: "${query}"...</span>
+                            </div>
+                        `);
+                        const googleResults = await callGoogleSearch(query, googleApiKey, googleCx);
+                        if (googleResults && googleResults.items) {
+                            const urlsToCrawl = googleResults.items.slice(0, 3).map(item => item.link); // Limit URLs to crawl
+                            for (const url of urlsToCrawl) {
+                                if (processedUrls.has(url)) {
+                                    console.log(`URL đã được xử lý, bỏ qua: ${url}`);
+                                    continue;
+                                }
+                                processedUrls.add(url);
+
+                                // Check for PDF or other non-HTML files before attempting to crawl
+                                const urlExtension = url.split('.').pop().toLowerCase();
+                                const nonHtmlExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'jpg', 'jpeg', 'png', 'gif', 'mp3', 'mp4', 'avi', 'mov'];
+                                if (nonHtmlExtensions.includes(urlExtension)) {
+                                    renderMessage(`
+                                        <p class="font-semibold text-orange-600">Bỏ qua crawl [${currentSourceId}]:</p>
+                                        <p class="text-sm">Không hỗ trợ crawl nội dung từ tệp loại ".${urlExtension}" tại <a href="${url}" target="_blank" class="text-indigo-600 hover:underline">${url.substring(0, 50)}...</a>. Vui lòng thử chế độ "Limited" hoặc "Unlimited" nếu bạn muốn sử dụng snippet từ Google Search.</p>
+                                    `, 'system_warning'); // Use a warning message for skipped files
+                                    continue; // Skip to the next URL
+                                }
+
+                                sourceCounter++;
+                                const currentSourceId = `S${sourceCounter}`;
+                                updateMessage(searchingMessage, `
+                                    <div class="flex items-center gap-2">
+                                        <i data-lucide="globe" class="w-4 h-4 text-slate-500"></i>
+                                        <span class="hieu-ung-cham">Đang crawl [${currentSourceId}]: <a href="${url}" target="_blank" class="text-indigo-600 hover:underline">${url.substring(0, 50)}...</a></span>
+                                    </div>
+                                `);
+                                const crawledData = await callBackendCrawl(url);
+                                if (crawledData && crawledData.content) {
+                                    // Extract structured information using Gemini, passing desired schema
+                                    const extractedInfo = await extractStructuredInfo(
+                                        userInput,
+                                        query,
+                                        crawledData.content,
+                                        url,
+                                        currentSourceId,
+                                        geminiApiKey,
+                                        desiredSchemaHeaders // Pass the desired schema
+                                    );
+                                    
+                                    if (extractedInfo) {
+                                        citationsData.push(extractedInfo);
+                                        const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || crawledData.content.substring(0, 200) || 'Không thể tóm tắt nội dung chính từ nguồn này.';
+                                        renderMessage(`
+                                            <p class="font-semibold mb-1">Nhận định về trang mô phỏng [${extractedInfo.ID || currentSourceId}]:</p>
+                                            <p class="text-sm">${displaySummary}</p>
+                                            <p class="text-xs text-slate-500 mt-1">Nguồn: <a href="${extractedInfo['Nguồn trích dẫn'] || url}" target="_blank" class="text-indigo-600 hover:underline">${extractedInfo['Nguồn trích dẫn'] || url}</a></p>
+                                        `, 'system_thinking');
+                                        rawSearchResults.push({
+                                            title: extractedInfo['Tóm tắt nội dung chính'] || `Nội dung từ: ${url}`,
+                                            link: url,
+                                            snippet: extractedInfo['Tóm tắt nội dung chính'] || crawledData.content.substring(0, 200), // Use summary or part of content as snippet
+                                            id: extractedInfo.ID || currentSourceId
+                                        });
+                                    } else {
+                                        renderMessage(`
+                                            <p class="font-semibold text-red-600">Lỗi trích xuất [${currentSourceId}]:</p>
+                                            <p class="text-sm">Không thể trích xuất thông tin có cấu trúc từ <a href="${url}" target="_blank" class="text-indigo-600 hover:underline">${url.substring(0, 50)}...</a>.</p>
+                                    `, 'system_error');
+                                    }
+                                } else {
+                                    renderMessage(`
+                                        <p class="font-semibold text-red-600">Lỗi crawl [${currentSourceId}]:</p>
+                                        <p class="text-sm">Không thể crawl nội dung từ <a href="${url}" target="_blank" class="text-indigo-600 hover:underline">${url.substring(0, 50)}...</a>. Lỗi: ${crawledData.error || 'Unknown error'}</p>
+                                    `, 'system_error');
+                                    console.warn(`Không thể crawl URL: ${url}. Lỗi: ${crawledData.error || 'Unknown error'}`);
+                                }
+                                await new Promise(resolve => setTimeout(resolve, 500)); // Small delay
+                            }
+                        }
+                    }
+
+                } else {
+                    // Limited/Unlimited mode: Use Google Custom Search API for snippets
+                    let sourceCounter = 0;
+                    for (const query of searchQueries) {
+                        updateMessage(searchingMessage, `
+                            <div class="flex items-center gap-2">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-500"></i>
+                                <span class="hieu-ung-cham">Đang tìm: "${query}"...</span>
+                            </div>
+                        `);
+                        const results = await callGoogleSearch(query, googleApiKey, googleCx);
+                        if (results && results.items) {
+                            let snippetsToProcess;
+                            if (selectedMode === 'limited') {
+                                snippetsToProcess = results.items.slice(0, 3); // Limit to 3 for 'limited' mode
+                            } else { // 'unlimited' mode
+                                snippetsToProcess = results.items; // Process all for 'unlimited' mode
+                            }
+                            
+                            for (const item of snippetsToProcess) {
+                                if (processedUrls.has(item.link)) {
+                                    console.log(`URL đã được xử lý, bỏ qua: ${item.link}`);
+                                    continue;
+                                }
+                                processedUrls.add(item.link);
+
+                                sourceCounter++;
+                                const currentSourceId = `S${sourceCounter}`;
+                                // Extract structured information from snippet
+                                const extractedInfo = await extractStructuredInfo(
+                                    userInput,
+                                    query,
+                                    item.snippet,
+                                    item.link,
+                                    currentSourceId,
+                                    geminiApiKey,
+                                    desiredSchemaHeaders // Pass the desired schema
+                                );
+
+                                if (extractedInfo) {
+                                    citationsData.push(extractedInfo);
+                                    const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || item.snippet || 'Không thể tóm tắt nội dung chính từ nguồn này.';
+                                    rawSearchResults.push({
+                                        title: item.title,
+                                        link: item.link,
+                                        snippet: item.snippet,
+                                        id: extractedInfo.ID || currentSourceId
+                                    });
+                                } else {
+                                    console.warn(`Không thể trích xuất thông tin có cấu trúc từ snippet: ${item.link}`);
+                                    rawSearchResults.push({ // Still add to rawSearchResults even if extraction fails
+                                        title: item.title,
+                                        link: item.link,
+                                        snippet: item.snippet,
+                                        id: currentSourceId
+                                    });
+                                }
+                            }
+                        }
+                        await new Promise(resolve => setTimeout(resolve, 200)); // Small delay to avoid hitting rate limits
+                    }
+                }
+
+
+
+                updateMessage(searchingMessage, `
+                    <div class="flex items-center gap-2 text-green-600">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        <span>Đã thu thập và trích xuất thông tin.</span>
+                    </div>
+                `);
+
+                // --- STEP 3: SYNTHESIZE AND ANSWER ---
+                const synthesizingMessage = renderMessage('', 'system_synthesizing', true);
+                updateMessage(synthesizingMessage, `
+                    <div class="flex items-center gap-2">
+                        <div class="loader"></div>
+                        <span class="hieu-ung-cham">Đang tổng hợp câu trả lời và trích dẫn nguồn...</span>
+                    </div>
+                `);
+
+                // Prepare context for synthesis. Prioritize extracted data points based on desired schema.
+                const context = citationsData.map(c => {
+                    let contentParts = [];
+                    // If a specific schema was requested, use those fields for context
+                    if (desiredSchemaHeaders && desiredSchemaHeaders.length > 0) {
+                        const structuredData = {};
+                        desiredSchemaHeaders.forEach(header => {
+                            if (c.hasOwnProperty(header)) {
+                                structuredData[header] = c[header];
+                            }
+                        });
+                        if (Object.keys(structuredData).length > 0) {
+                            contentParts.push(`Dữ liệu có cấu trúc: ${JSON.stringify(structuredData)}`);
+                        }
+                    } else { // Fallback to generic structured data if no specific schema
+                        if (c['Các điểm dữ liệu quan trọng'] && Object.keys(c['Các điểm dữ liệu quan trọng']).length > 0) {
+                            contentParts.push(`Dữ liệu quan trọng: ${JSON.stringify(c['Các điểm dữ liệu quan trọng'])}`);
+                        }
+                        if (c['Tóm tắt nội dung chính']) {
+                            contentParts.push(`Tóm tắt: ${c['Tóm tắt nội dung chính']}`);
+                        } else {
+                            // Fallback to original snippet if available, or just URL
+                            const originalSnippet = rawSearchResults.find(rs => rs.id === c.ID)?.snippet;
+                            if (originalSnippet) {
+                                contentParts.push(`Nội dung: ${originalSnippet}`);
+                            } else {
+                                contentParts.push(`Nội dung từ: ${c['Nguồn trích dẫn']}`);
+                            }
+                        }
+                    }
+                    
+                    return `Nguồn ID: ${c.ID}\nURL: ${c['Nguồn trích dẫn']}\n${contentParts.join('\n')}`;
+                }).join('\n\n----- Nguồn mới -----\n\n');
+
+                // Prompt cuối cùng để tạo ra câu trả lời một cách tổng quát
+                const synthesisPrompt = `
+                    Bạn là một trợ lý nghiên cứu AI chuyên nghiệp, có khả năng tự đánh giá và tối ưu hóa đầu ra.
+                    Nhiệm vụ của bạn là trả lời câu hỏi gốc của người dùng bằng tiếng Việt dựa *duy nhất* trên các thông tin đã được trích xuất từ các nguồn (CONTEXT).
+                    
+                    **Nguyên tắc tự đánh giá và tối ưu:**
+                    - Đảm bảo câu trả lời toàn diện, có cấu trúc tốt và chi tiết.
+                    - Toàn bộ phản hồi của bạn PHẢI bằng tiếng Việt.
+                    - Cấu trúc câu trả lời của bạn bằng cách sử dụng Markdown để dễ đọc (tiêu đề, chữ in đậm, danh sách).
+                    - **Nếu người dùng yêu cầu một cấu trúc dữ liệu cụ thể (ví dụ: các cột CSV), hãy trình bày thông tin dưới dạng bảng Markdown với các cột đó. Đảm bảo tất cả các cột được yêu cầu đều có trong bảng, ngay cả khi giá trị trống.**
+                    - **Khi bạn sử dụng thông tin từ một nguồn cụ thể, hãy trích dẫn ID của nguồn đó ngay sau thông tin bằng định dạng (ID: [ID nguồn]). Ví dụ: "Cà phê Robusta đạt mức giá cao nhất là 50,000 VND (ID: S1)."**
+                    - Nếu ngữ cảnh không đủ để trả lời câu hỏi một cách đầy đủ hoặc tìm thấy thông tin cụ thể được yêu cầu, hãy nêu rõ rằng bạn không thể tìm thấy đủ thông tin trong các nguồn được cung cấp. Không tạo ra thông tin.
+                    - KHÔNG sử dụng bất kỳ thông tin nào ngoài CONTEXT được cung cấp.
+                    - Không đề cập rằng bạn đang dựa câu trả lời của mình vào ngữ cảnh được cung cấp. Chỉ cần trả lời trực tiếp câu hỏi.
+                    - **Tự kiểm tra tính nhất quán:** Nếu có thông tin mâu thuẫn giữa các nguồn, hãy chỉ ra sự mâu thuẫn đó hoặc cố gắng tổng hợp thông tin một cách thận trọng, nêu rõ sự không chắc chắn nếu cần.
+
+                    CONTEXT:
+                    """
+                    ${context}
+                    """
+
+                    Câu hỏi gốc của người dùng: "${userInput}"
+                `;
+
+                const finalAnswer = await callGemini(synthesisPrompt, geminiApiKey, false);
+                
+                if (citationsData.length > 0) {
+                    cau_thu = cau_thu+1;
+                    
+                    // Render Markdown to HTML
+                    const formattedAnswer = marked.parse(finalAnswer);
+                    // Update the message element with the formatted answer
+                    synthesizingMessage.innerHTML = `<div class="prose max-w-none">${formattedAnswer}</div>`;
+
+                    // After rendering, find all tables and add download buttons
+                    let tables = synthesizingMessage.querySelectorAll('table');
+                    tables.forEach((table, index) => {
+                        let headers = [];
+                        table.querySelectorAll('thead th').forEach(th => headers.push(th.innerText.trim()));
+
+                        let rows = [];
+                        table.querySelectorAll('tbody tr').forEach(tr => {
+                            let rowData = [];
+                            tr.querySelectorAll('td').forEach(td => rowData.push(td.innerText.trim()));
+                            rows.push(rowData);
+                        });
+
+                        if (headers.length > 0 && rows.length > 0) {
+                            let downloadButton = document.createElement('button');
+                            downloadButton.id = `download-table-btn-${cau_thu}-${index}`; // Unique ID for each table button
+                            downloadButton.className = 'bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition text-sm flex items-center gap-1 mt-2 mb-4';
+                            downloadButton.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+                                </svg>
+                                <span>Tải Bảng (CSV)</span>
+                            `;
+
+                            downloadButton.addEventListener('click', () => {
+                                let filename = `ket_qua_tong_hop_bang_${index + 1}.csv`;
+                                // Attempt to get a title from a preceding heading if available
+                                let prevSibling = table.previousElementSibling;
+                                while (prevSibling) {
+                                    if (prevSibling.tagName.match(/^H[1-6]$/)) {
+                                        // Sanitize filename: remove special characters and replace spaces with underscores
+                                        filename = `${prevSibling.innerText.trim().replace(/[^a-zA-Z0-9\sÀÁẠẢÃĂẰẮẶẲẴÂẦẤẬẨẪĐÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸàáạảãăằắặẳẵâầấậẩẫđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/g, '').replace(/\s+/g, '_').toLowerCase()}.csv`;
+                                        break;
+                                    }
+                                    prevSibling = prevSibling.previousElementSibling;
+                                }
+                                exportSimpleTableToCsv(headers, rows, filename);
+                            });
+
+                            // Insert the button after the table
+                            table.parentNode.insertBefore(downloadButton, table.nextSibling);
+                        }
+                    });
+
+                    // Add the citation download button
+                    const downloadCitationButtonContainer = document.createElement('div');
+                    downloadCitationButtonContainer.className = "flex gap-2 mt-2 mb-4";
+                    downloadCitationButtonContainer.innerHTML = `
+                        <button id="download-csv-btn${cau_thu}" class="bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition text-sm flex items-center gap-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            <span>Tải CSV Các Trích dẫn</span>
+                        </button>
+                        
+                        <button id="send-receiver-size-btn${cau_thu}" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition flex items-center justify-center w-12 h-12 group">
+                            <!-- Original three-bar SVG -->
+                            <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <rect x="4" y="12" width="4" height="8" rx="1" fill="currentColor" class="bar-1"></rect>
+                                <rect x="10" y="8" width="4" height="12" rx="1" fill="currentColor" class="bar-2"></rect>
+                                <rect x="16" y="14" width="4" height="6" rx="1" fill="currentColor" class="bar-3"></rect>
+                            </svg>
+                        </button>
+                    `;
+
+                    
+                    document.getElementById('send-receiver-size-btn'); // Button in chat form
+                    synthesizingMessage.appendChild(downloadCitationButtonContainer);
+
+                    const downloadCsvBtn = document.getElementById(`download-csv-btn${cau_thu}`);
+                    downloadCsvBtn.addEventListener('click', () => {
+                        let copyCitationsData=JSON.parse(JSON.stringify(citationsData));
+                        if (copyCitationsData.length > 0) {
+                            exportToCsv(copyCitationsData, 'deep_research_citations.csv');
+                        } else {
+                            renderMessage('Không có dữ liệu trích dẫn để tải xuống.', 'system_error'); // Use renderMessage for consistency
+                        }
+                    });
+
+                    const sendReceiverSizeBtn = document.getElementById(`send-receiver-size-btn${cau_thu}`); // Button in chat form
+
+                    // --- Event Listeners for Receiver iframe control ---
+                    sendReceiverSizeBtn.addEventListener('click', () => {
+                        if (currentIframeState === 'partial') {
+                            setIframeState('fullscreen');
+                        } else if (currentIframeState === 'bookmark') { // If in bookmark state, clicking send should bring to partial
+                            setIframeState('partial');
+                            setIframeState('fullscreen');
+                        }
+                    });
+
+                }
+                else {
+                    // Render Markdown to HTML
+                    const formattedAnswer = marked.parse(finalAnswer);
+                    updateMessage(synthesizingMessage, `<div class="prose max-w-none">${formattedAnswer}</div>`);
+                }
+                
+            } catch (error) {
+                console.error("An error occurred:", error);
+                let errorMessage = `<p class="font-semibold text-red-600">Đã xảy ra lỗi</p><p>${error.message}. Vui lòng kiểm tra lại API keys và bảng điều khiển (console) để biết thêm chi tiết.</p>`;
+                
+                // Check for Gemini API 401 errors
+                if (error.message.includes("401") && (selectedMode === 'quota' || selectedMode === 'quota-backend' || geminiApiKey === '')) {
+                    errorMessage = `<p class="font-semibold text-red-600">Lỗi Gemini API</p><p>Lỗi xác thực (mã 401) từ Gemini API. Điều này có thể do khóa Gemini API của môi trường Canvas không hợp lệ hoặc đã hết hạn. Vui lòng thử nhập Gemini API Key của riêng bạn vào ô trên hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp diễn.</p>`;
+                }
+                // Check for Google Search API 401 errors (only relevant if not in quota modes)
+                else if (error.message.includes("401") && (selectedMode !== 'quota' && selectedMode !== 'quota-backend')) {
+                    errorMessage = `<p class="font-semibold text-red-600">Lỗi Google Search API</p><p>Lỗi xác thực (mã 401) từ Google Search API. Vui lòng kiểm tra Google Search API Key và Search Engine ID (CX) của bạn.</p>`;
+                }
+                // If Google Search API keys are missing and a mode requiring them is selected
+                else if ((!googleApiKey || !googleCx) && (selectedMode !== 'quota' && selectedMode !== 'quota-backend')) {
+                    errorMessage += `<p class="mt-2">Để sử dụng chế độ "${selectedMode}", bạn cần cung cấp cả Google Search API Key và Search Engine ID (CX) của bạn.</p><p>Bạn có muốn chuyển sang chế độ "Quota" hoặc "Quota (Back-end)" để tiếp tục mà không cần API Key Google Search không? Vui lòng chọn một trong hai chế độ này từ danh sách thả xuống.</p>`;
+                }
+
+                renderMessage(errorMessage, 'system_error');
+            } finally {
+                setLoadingState(false);
+                // Explicitly stop the spin for the bot icon associated with the last system message
+                const lastSystemMessageWrapper = chatContainer.lastElementChild;
+                if (lastSystemMessageWrapper && lastSystemMessageWrapper.querySelector('.lucude-bot')) {
+                    lastSystemMessageWrapper.querySelector('.lucude-bot').classList.remove('animate-spin');
+                }
+            }
+        });
+
+        function setLoadingState(isLoading) {
+            chatInput.disabled = isLoading;
+            sendButton.disabled = isLoading;
+            researchModeSelect.disabled = isLoading; // Disable mode selection during processing
+            if (isLoading) {
+                sendButton.innerHTML = `<div class="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>`;
+            } else {
+                sendButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`;
+            }
+        }
+
+        function renderMessage(content, sender, isDynamic = false) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = 'flex items-start gap-3 mb-4';
+
+            // Create a div for the icon and set its innerHTML
+            const iconDiv = document.createElement('div');
+            let contentBg = 'bg-slate-100';
+            let contentTextColor = 'text-slate-800';
+
+            switch (sender) {
+                case 'user':
+                    iconDiv.className = "bg-slate-600 p-2 rounded-full flex-shrink-0";
+                    iconDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+                    contentBg = 'bg-indigo-600';
+                    contentTextColor = 'text-white';
+                    messageWrapper.classList.add('justify-end');
+                    break;
+                case 'system_error':
+                    iconDiv.className = "bg-red-500 p-2 rounded-full flex-shrink-0";
+                    iconDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>`;
+                    contentBg = 'bg-red-100';
+                    contentTextColor = 'text-red-800';
+                    break;
+                case 'system_warning': // Added for warnings
+                    iconDiv.className = "bg-orange-500 p-2 rounded-full flex-shrink-0";
+                    iconDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>`;
+                    contentBg = 'bg-orange-100';
+                    contentTextColor = 'text-orange-800';
+                    break;
+                default: // system messages
+                    iconDiv.className = "bg-indigo-600 p-2 rounded-full flex-shrink-0";
+                    iconDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucude-bot"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>`;
+                    // Start the spin for dynamic messages (thinking/searching/synthesizing)
+                    if (isDynamic) {
+                        const botSvg = iconDiv.querySelector('.lucude-bot');
+                        if (botSvg) {
+                            botSvg.classList.add('animate-spin');
+                        }
+                    }
+                    break;
+            }
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `rounded-lg p-3 max-w-full ${contentBg} ${contentTextColor}`;
+            contentDiv.innerHTML = sender === 'user' ? `<p>${content}</p>` : content;
+
+            if (sender === 'user') {
+                messageWrapper.appendChild(contentDiv);
+                messageWrapper.appendChild(iconDiv); // Append the iconDiv element
+            } else {
+                messageWrapper.appendChild(iconDiv); // Append the iconDiv element
+                messageWrapper.appendChild(contentDiv);
+            }
+
+            chatContainer.appendChild(messageWrapper);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Re-render icons if any were added
+            lucide.createIcons();
+
+            return isDynamic ? contentDiv : messageWrapper;
+        }
+
+        function updateMessage(messageElement, newContent) {
+            // messageElement here is the contentDiv
+            let tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newContent; // newContent is already HTML from marked.parse
+
+            // Check if the new content contains the hieu-ung-cham animation
+            const hasHieuUngCham = tempDiv.querySelector('.hieu-ung-cham');
+
+            // Find the parent messageWrapper and then the bot SVG
+            const messageWrapper = messageElement.closest('.flex.items-start.gap-3');
+            const botSvg = messageWrapper ? messageWrapper.querySelector('.lucude-bot') : null;
+
+            if (botSvg) {
+                if (hasHieuUngCham) {
+                    botSvg.classList.add('animate-spin');
+                } else {
+                    botSvg.classList.remove('animate-spin');
+                }
+            }
+
+            let tables = tempDiv.querySelectorAll('table');
+            tables.forEach((table, index) => {
+                let headers = [];
+                table.querySelectorAll('thead th').forEach(th => headers.push(th.innerText.trim()));
+
+                let rows = [];
+                table.querySelectorAll('tbody tr').forEach(tr => {
+                    let rowData = [];
+                    tr.querySelectorAll('td').forEach(td => rowData.push(td.innerText.trim()));
+                    rows.push(rowData);
+                });
+
+                if (headers.length > 0 && rows.length > 0) {
+                    let downloadButton = document.createElement('button');
+                    downloadButton.id = `download-table-btn-${cau_thu}-${index}`; // Unique ID for each table button
+                    downloadButton.className = 'bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition text-sm flex items-center gap-1 mt-2 mb-4';
+                    downloadButton.innerHTML = `
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>
+                                </svg>
+                                <span>Tải Bảng (CSV)</span>
+                            `;
+
+                    downloadButton.addEventListener('click', () => {
+                        let filename = `ket_qua_tong_hop_bang_${index + 1}.csv`;
+                        // Attempt to get a title from a preceding heading if available
+                        let prevSibling = table.previousElementSibling;
+                        while (prevSibling) {
+                            if (prevSibling.tagName.match(/^H[1-6]$/)) {
+                                // Sanitize filename: remove special characters and replace spaces with underscores
+                                filename = `${prevSibling.innerText.trim().replace(/[^a-zA-Z0-9\sÀÁẠẢÃĂẰẮẶẲẴÂẦẤẬẨẪĐÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸàáạảãăằắặẳẵâầấậẩẫđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/g, '').replace(/\s+/g, '_').toLowerCase()}.csv`;
+                                break;
+                            }
+                            prevSibling = prevSibling.previousElementSibling;
+                        }
+                        exportSimpleTableToCsv(headers, rows, filename);
+                    });
+
+                    // Insert the button after the table
+                    table.parentNode.insertBefore(downloadButton, table.nextSibling);
+                }
+            });
+
+            // Update the message element with the modified HTML
+            messageElement.innerHTML = tempDiv.innerHTML;
+            lucide.createIcons(); // Re-render icons after DOM manipulation
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        async function callGemini(prompt, apiKey, expectJson = false) {
+            const model = 'gemini-2.0-flash'; 
+            let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`; 
+
+            // Conditionally add the API key to the URL
+            if (apiKey) {
+                url += `?key=${apiKey}`;
+            } else {
+                // If no API key is provided by the user, append key= to the URL.
+                // Canvas runtime will automatically populate this with the environment's API key.
+                url += '?key=';
+            }
+            
+            const requestBody = {
+                contents: [{ parts: [{ text: prompt }] }],
+                generationConfig: expectJson ? { responseMimeType: "application/json" } : {}
+            };
+
+            const headers = { 'Content-Type': 'application/json' };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (parseError) {
+                        // If response is not JSON, provide raw status and text
+                        throw new Error(`Gemini API error: ${response.status} ${response.statusText}. Could not parse error response as JSON. Raw response: ${await response.text()}`);
+                    }
+                    // If errorData has a message, use it, otherwise use a generic message
+                    throw new Error(`Gemini API error: ${errorData.error?.message || 'Something went wrong with the API call.'}`);
+                }
+
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                console.log('Raw Gemini response text:', text); // Log raw text for debugging
+
+                if (expectJson) {
+                    try {
+                        return JSON.parse(text);
+                    } catch (jsonParseError) {
+                        console.error("Lỗi phân tích JSON từ Gemini (dự kiến JSON nhưng nhận được không hợp lệ):", jsonParseError, "Text nhận được:", text);
+                        throw new Error(`Gemini API trả về JSON không hợp lệ. Vui lòng thử lại. Chi tiết: ${text.substring(0, Math.min(text.length, 200))}...`);
+                    }
+                } else {
+                    return text;
+                }
+            } catch (error) {
+                console.error("Lỗi trong callGemini:", error);
+                throw error; // Re-throw to be caught by the outer try-catch in chatForm.addEventListener
+            }
+        }
+
+        async function callGoogleSearch(query, apiKey, cx) {
+            const url = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${cx}&q=${encodeURIComponent(query)}`;
+            
+            const response = await fetch(url);
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Google Search API error: ${errorData.error.message}`);
+            }
+            return response.json();
+        }
+
+        async function callBackendCrawl(urlToCrawl) {
+            // Địa chỉ của backend Flask của bạn. Đảm bảo nó đang chạy!
+            const backendUrl = 'https://data-phinter.onrender.com/api/crawl_url'; // URL mới của receiver host
+
+            try {
+                const response = await fetch(backendUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: urlToCrawl })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Backend crawl error: ${errorData.error || response.statusText}`);
+                }
+                return response.json();
+            } catch (error) {
+                console.error("Lỗi khi gọi backend crawl:", error);
+                return { error: `Không thể kết nối đến backend hoặc lỗi crawl: ${error.message}` };
+            }
+        }
+
+        async function extractStructuredInfo(userInput, query, sourceContent, sourceUrl, sourceId, geminiApiKey, desiredSchemaHeaders = []) {
+            const model = 'gemini-2.0-flash';
+            let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`; 
+
+            // Conditionally add the API key to the URL
+            if (geminiApiKey) {
+                url += `?key=${geminiApiKey}`;
+            } else {
+                url += '?key=';
+            }
+            
+            const headers = { 'Content-Type': 'application/json' };
+
+            let schemaInstructions = '';
+            let jsonSchemaProperties = {};
+            let propertyOrdering = ["ID", "Nguồn trích dẫn"]; // Always include these base fields
+
+            if (desiredSchemaHeaders && desiredSchemaHeaders.length > 0) {
+                schemaInstructions = `
+                Bạn PHẢI trích xuất thông tin và ánh xạ nó vào các trường tương ứng với các tiêu đề cột sau. Nếu một tiêu đề cột không tìm thấy thông tin phù hợp, hãy đặt giá trị là một chuỗi rỗng ("").
+                Các tiêu đề cột mong muốn: ${JSON.stringify(desiredSchemaHeaders)}.
+                Đặc biệt, đối với trường "HTML", hãy đặt giá trị là một đoạn văn bản ngắn gọn (tối đa 200 ký tự) từ nội dung trang web có liên quan nhất đến câu hỏi gốc, hoặc một chuỗi rỗng nếu không có.
+                `;
+
+                // Build JSON schema properties dynamically from desiredSchemaHeaders
+                desiredSchemaHeaders.forEach(header => {
+                    jsonSchemaProperties[header] = { "type": "STRING" };
+                });
+
+                // Filter desiredSchemaHeaders to remove any that are already in the base propertyOrdering
+                const filteredDesiredHeaders = desiredSchemaHeaders.filter(h => !propertyOrdering.includes(h));
+                propertyOrdering = [...propertyOrdering, ...filteredDesiredHeaders]; // Append only unique desired headers
+
+            } else {
+                // Modified to request 'Các điểm dữ liệu quan trọng' as a JSON string within a STRING field
+                schemaInstructions = `
+                Trả về một đối tượng JSON với các trường sau:
+                - "Tóm tắt nội dung chính": Một đoạn văn ngắn (tối đa 2-3 câu) tóm tắt nội dung quan trọng nhất của trang liên quan đến câu hỏi.
+                - "Các điểm dữ liệu quan trọng_json": Một chuỗi JSON biểu diễn các cặp khóa-giá trị (key-value) của các thông tin/sự kiện/số liệu quan trọng nhất được tìm thấy trong trang, liên quan đến câu hỏi gốc. Ví dụ: "{\\"Giá cao nhất\\": \\"X\\", \\"Giá thấp nhất\\": \\"Y\\", \\"Nhà phân phối\\": \\"Z\\"}". Nếu không tìm thấy điểm dữ liệu quan trọng nào, hãy để trống chuỗi JSON này (ví dụ: "{}").
+                Đảm bảo tất cả các giá trị là chuỗi.
+                `;
+                jsonSchemaProperties = {
+                    "Tóm tắt nội dung chính": { "type": "STRING" },
+                    "Các điểm dữ liệu quan trọng_json": { "type": "STRING" } // Changed to STRING
+                };
+                propertyOrdering = [...propertyOrdering, "Tóm tắt nội dung chính", "Các điểm dữ liệu quan trọng_json"]; // Add default headers to ordering
+            }
+
+            const extractionPrompt = `
+                Bạn là một trợ lý nghiên cứu AI chuyên nghiệp, có khả năng tự đánh giá và tối ưu hóa quy trình trích xuất.
+                Nhiệm vụ của bạn là trích xuất thông tin có cấu trúc từ nội dung trang web được cung cấp, liên quan trực tiếp đến câu hỏi gốc của người dùng và các truy vấn tìm kiếm đã sử dụng.
+                
+                **Nguyên tắc tự đánh giá và tối ưu:**
+                - Đảm bảo tính gắn kết (Cohesion): Chỉ tập trung vào việc trích xuất dữ liệu từ nguồn đã cho, không tạo ra thông tin mới.
+                - Đảm bảo tính kết nối (Coupling) thấp: Đầu ra phải tuân thủ nghiêm ngặt schema đã định nghĩa.
+                - Đảm bảo POLA: Việc trích xuất phải nhất quán và dễ đoán.
+                - Nếu không tìm thấy thông tin cho một trường, hãy để trống ("").
+                - Đặc biệt chú ý đến việc trích xuất các giá trị số, đơn vị, và các thuộc tính cụ thể (ví dụ: thương hiệu, loại sản phẩm) nếu chúng được yêu cầu trong schema.
+
+                Trả về CHỈ một đối tượng JSON hợp lệ. Đối tượng này PHẢI bao gồm các trường sau:
+                - "ID": Một định danh duy nhất cho nguồn này (ví dụ: "S1", "S2").
+                - "Nguồn trích dẫn": URL đầy đủ của trang web nguồn.
+                ${schemaInstructions}
+
+                Câu hỏi gốc của người dùng: "${userInput}"
+                Truy vấn tìm kiếm dẫn đến trang này: "${query}"
+                Nội dung trang web:
+                """
+                ${sourceContent}
+                """
+                URL nguồn: "${sourceUrl}"
+                ID nguồn: "${sourceId}"
+            `;
+            
+            const payload = {
+                contents: [{ parts: [{ text: extractionPrompt }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            "ID": { "type": "STRING" },
+                            "Nguồn trích dẫn": { "type": "STRING" },
+                            ...jsonSchemaProperties
+                        },
+                        "propertyOrdering": propertyOrdering // Use the dynamically built propertyOrdering
+                    }
+                }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: headers, // Use the dynamically created headers
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (parseError) {
+                        throw new Error(`Gemini API error during extraction: ${response.status} ${response.statusText}. Không thể phân tích phản hồi lỗi thành JSON.`);
+                    }
+                    throw new Error(`Gemini API error during extraction: ${errorData.error.message}`);
+                }
+
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text;
+                console.log('Raw Gemini response text:', text); // Log raw text for debugging
+
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (jsonParseError) {
+                    console.error("Lỗi phân tích JSON từ Gemini trong extractStructuredInfo (dự kiến JSON nhưng nhận được không hợp lệ):", jsonParseError, "Text nhận được:", text);
+                    // Return a default structure if parsing fails to prevent app crash
+                    return {
+                        ID: sourceId,
+                        "Nguồn trích dẫn": sourceUrl,
+                        "Tóm tắt nội dung chính": `Lỗi trích xuất từ nguồn này. Nội dung gốc có thể không hợp lệ hoặc API trả về lỗi.`,
+                        "Các điểm dữ liệu quan trọng": {} // Ensure this is an object for consistency
+                    };
+                }
+
+                // If it was the generic schema, parse the _json field back into an object
+                if (!desiredSchemaHeaders || desiredSchemaHeaders.length === 0) {
+                    try {
+                        result['Các điểm dữ liệu quan trọng'] = JSON.parse(result['Các điểm dữ liệu quan trọng_json'] || '{}');
+                        delete result['Các điểm dữ liệu quan trọng_json']; // Clean up the temporary field
+                    } catch (e) {
+                        console.warn("Could not parse 'Các điểm dữ liệu quan trọng_json':", e, "Raw string:", result['Các điểm dữ liệu quan trọng_json']);
+                        result['Các điểm dữ liệu quan trọng'] = {}; // Default to empty object on parse error
+                    }
+                }
+                return result;
+
+            } catch (error) {
+                console.error("Lỗi khi trích xuất thông tin có cấu trúc:", error);
+                // Return a default structure if parsing fails to prevent app crash
+                return {
+                    ID: sourceId,
+                    "Nguồn trích dẫn": sourceUrl,
+                    "Tóm tắt nội dung chính": `Lỗi trích xuất từ nguồn này. Nội dung gốc có thể không hợp lệ hoặc API trả về lỗi: ${error.message}`,
+                    "Các điểm dữ liệu quan trọng": {} // Ensure this is an object for consistency
+                };
+            }
+        }
+
+        function escapeCsv(value) {
+            if (value === null || value === undefined) {
+                return '';
+            }
+            let stringValue = String(value);
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return `"${stringValue.replace(/"/g, '""')}"`;
+            }
+            return stringValue;
+        }
+
+        function exportToCsv(data, filename) {
+            if (data.length === 0) return;
+
+            // Collect all unique headers, including nested keys from "Các điểm dữ liệu quan trọng"
+            const allHeaders = new Set();
+            data.forEach(row => {
+                Object.keys(row).forEach(key => {
+                    if (key === 'Các điểm dữ liệu quan trọng' && typeof row[key] === 'object' && row[key] !== null) {
+                        Object.keys(row[key]).forEach(nestedKey => allHeaders.add(nestedKey));
+                    } else if (key !== 'Các điểm dữ liệu quan trọng_json') { // Exclude the temporary JSON string field
+                        allHeaders.add(key);
+                    }
+                });
+            });
+
+            // Ensure mandatory headers are first
+            const mandatoryHeaders = ["ID", "Nguồn trích dẫn", "Tóm tắt nội dung chính"];
+            let finalHeaders = mandatoryHeaders.filter(h => allHeaders.has(h));
+            // Add other headers, excluding "Các điểm dữ liệu quan trọng" itself and the temporary JSON string field
+            Array.from(allHeaders).sort().forEach(h => {
+                if (!mandatoryHeaders.includes(h) && h !== 'Các điểm dữ liệu quan trọng' && h !== 'Các điểm dữ liệu quan trọng_json') {
+                    finalHeaders.push(h);
+                }
+            });
+            // Add nested keys from "Các điểm dữ liệu quan trọng" at the end
+            const nestedHeaders = new Set();
+            data.forEach(row => {
+                if (row['Các điểm dữ liệu quan trọng'] && typeof row['Các điểm dữ liệu quan trọng'] === 'object') {
+                    Object.keys(row['Các điểm dữ liệu quan trọng']).forEach(key => nestedHeaders.add(key));
+                }
+            });
+            Array.from(nestedHeaders).sort().forEach(h => finalHeaders.push(h));
+
+
+            let csvContent = finalHeaders.map(escapeCsv).join(',') + '\n';
+
+            data.forEach(row => {
+                const rowValues = finalHeaders.map(header => {
+                    if (row.hasOwnProperty(header)) {
+                        return escapeCsv(row[header]);
+                    } else if (row['Các điểm dữ liệu quan trọng'] && typeof row['Các điểm dữ liệu quan trọng'] === 'object' && row['Các điểm dữ liệu quan trọng'].hasOwnProperty(header)) {
+                        return escapeCsv(row['Các điểm dữ liệu quan trọng'][header]);
+                    }
+                    return ''; // Empty string for missing values
+                });
+                csvContent += rowValues.join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) { // feature detection
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                renderMessage('Trình duyệt của bạn không hỗ trợ tải xuống CSV trực tiếp.', 'system_error'); // Use renderMessage
+            }
+        }
+
+        function exportSimpleTableToCsv(headers, rows, filename) {
+            let csvContent = headers.map(escapeCsv).join(',') + '\n';
+            rows.forEach(row => {
+                csvContent += row.map(escapeCsv).join(',') + '\n';
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } else {
+                renderMessage('Trình duyệt của bạn không hỗ trợ tải xuống CSV trực tiếp.', 'system_error');
+            }
+        }
+
+        // Close button inside the fullscreen header
+        receiverFullscreenHeader.querySelector('#close-receiver-btn').addEventListener('click', () => {
+            setIframeState('partial');
+        });
+
+        // Click listener for the bookmark tab (for toggling partial/bookmark)
+        iframeBookmarkTab.addEventListener('click', (e) => {
+            // Only send if not currently dragging
+            if (!isDragging) {
+                if (currentIframeState === 'bookmark') {
+                    setIframeState('partial');
+                } else if (currentIframeState === 'partial') {
+                    setIframeState('bookmark');
+                }
+            }
+        });
+
+        // Drag functionality for the bookmark tab
+        iframeBookmarkTab.addEventListener('mousedown', startDrag);
+        iframeBookmarkTab.addEventListener('touchstart', startDrag, { passive: false });
+
+        function startDrag(e) {
+            if (currentIframeState !== 'partial') return; // Only allow dragging from partial state
+
+            isDragging = true;
+            startX = e.clientX || e.touches[0].clientX;
+            startIframeWidth = receiverContainer.offsetWidth;
+
+            // Disable transitions during drag for immediate feedback
+            setIframeState(currentIframeState, true); // Call with disableTransition = true
+
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchmove', drag, { passive: false });
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+
+            const currentX = e.clientX || e.touches[0].clientX;
+            const deltaX = currentX - startX; // How much moved from startX
+
+            let newWidth = startIframeWidth - deltaX; // If dragging left (deltaX negative), width increases
+
+            // Clamp newWidth to prevent going beyond screen edges or negative
+            newWidth = Math.max(0, Math.min(window.innerWidth, newWidth));
+
+            receiverContainer.style.width = `${newWidth}px`;
+            // Bookmark tab's right position is equal to the iframe's current width
+            iframeBookmarkTab.style.right = `${newWidth}px`; 
+
+            e.preventDefault(); // Prevent scrolling on touch devices
+        }
+
+        function endDrag(e) {
+            if (!isDragging) return;
+            isDragging = false;
+
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('touchend', endDrag);
+
+            const finalWidth = receiverContainer.offsetWidth;
+            const viewportWidth = window.innerWidth;
+
+            // Determine next state based on final width
+            if (finalWidth > viewportWidth * (DRAG_THRESHOLD_FULLSCREEN_VW / 100)) {
+                setIframeState('fullscreen');
+            } else if (finalWidth < viewportWidth * (DRAG_THRESHOLD_BOOKMARK_VW / 100)) {
+                setIframeState('bookmark');
+            } else {
+                setIframeState('partial'); // Snap back to partial if not beyond thresholds
+            }
+        }
+
+        // Initial setup
+        setIframeState('bookmark'); // Set initial state to bookmark
+        lucide.createIcons(); // Still useful for other Lucide icons in the app
+    </script>
+</body>
+</html>
