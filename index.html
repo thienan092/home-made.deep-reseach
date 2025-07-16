@@ -337,20 +337,26 @@
             if (newState === 'fullscreen') {
                 receiverFullscreenHeader.style.display = 'flex';
                 iframeBookmarkTab.style.display = 'none'; // Hide bookmark tab in fullscreen
-            } else { // partial or bookmark
+                receiverContainer.style.width = '100vw'; // Set width to 100vw for fullscreen
+                receiverContainer.style.left = '0'; // Ensure it starts from left
+                receiverContainer.style.right = '0'; // Ensure it extends to right
+                receiverContainer.style.padding = '0'; // Remove padding in fullscreen
+            } else if (newState === 'partial') { // partial or bookmark
                 receiverFullscreenHeader.style.display = 'none';
                 iframeBookmarkTab.style.display = 'flex'; // Show bookmark tab otherwise
-            }
-
-            // Manage position of the bookmark tab and iframe width
-            if (newState === 'partial') {
                 iframeBookmarkTab.style.right = `${PARTIAL_WIDTH_VW}vw`; // Bookmark tab sticks to iframe's left edge (relative to screen right)
                 receiverContainer.style.width = `${PARTIAL_WIDTH_VW}vw`; // Ensure iframe width is also set for partial state
+                receiverContainer.style.left = 'auto'; // Ensure it stays on the right
+                receiverContainer.style.right = '0';
+                receiverContainer.style.padding = '1rem'; // Default padding for partial
             } else if (newState === 'bookmark') {
+                receiverFullscreenHeader.style.display = 'none';
+                iframeBookmarkTab.style.display = 'flex'; // Show bookmark tab otherwise
                 iframeBookmarkTab.style.right = '0'; // Back to the edge
                 receiverContainer.style.width = '0'; // Ensure iframe width is 0 for bookmark state
-            } else { // fullscreen
-                 // In fullscreen, iframeBookmarkTab is hidden by the first if block
+                receiverContainer.style.left = 'auto'; // Ensure it stays on the right
+                receiverContainer.style.right = '0';
+                receiverContainer.style.padding = '0'; // No padding when hidden
             }
 
             // Ensure iframe content is visible only when not in bookmark state
