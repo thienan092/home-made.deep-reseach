@@ -182,19 +182,19 @@
             50% { transform: translateY(-4px); opacity: 0.8; }
         }
 
-        #send-receiver-size-btn:hover .bar-1,
-        #send-receiver-size-btn:hover .bar-2,
-        #send-receiver-size-btn:hover .bar-3 {
+        .send-receiver-size-btn:hover .bar-1,
+        .send-receiver-size-btn:hover .bar-2,
+        .send-receiver-size-btn:hover .bar-3 {
             animation: bar-animation 1s ease-in-out infinite;
         }
 
-        #send-receiver-size-btn:hover .bar-1 {
+        .send-receiver-size-btn:hover .bar-1 {
             animation-delay: 0s;
         }
-        #send-receiver-size-btn:hover .bar-2 {
+        .send-receiver-size-btn:hover .bar-2 {
             animation-delay: 0.2s;
         }
-        #send-receiver-size-btn:hover .bar-3 {
+        .send-receiver-size-btn:hover .bar-3 {
             animation-delay: 0.4s;
         }
     </style>
@@ -685,6 +685,9 @@
                         if (googleResults && googleResults.items) {
                             const urlsToCrawl = googleResults.items.slice(0, 3).map(item => item.link); // Limit URLs to crawl
                             for (const url of urlsToCrawl) {
+                                sourceCounter++;
+                                const currentSourceId = `S${sourceCounter}`;
+                                
                                 if (processedUrls.has(url)) {
                                     console.log(`URL đã được xử lý, bỏ qua: ${url}`);
                                     continue;
@@ -694,6 +697,7 @@
                                 // Check for PDF or other non-HTML files before attempting to crawl
                                 const urlExtension = url.split('.').pop().toLowerCase();
                                 const nonHtmlExtensions = ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z', 'jpg', 'jpeg', 'png', 'gif', 'mp3', 'mp4', 'avi', 'mov'];
+
                                 if (nonHtmlExtensions.includes(urlExtension)) {
                                     renderMessage(`
                                         <p class="font-semibold text-orange-600">Bỏ qua crawl [${currentSourceId}]:</p>
@@ -702,8 +706,6 @@
                                     continue; // Skip to the next URL
                                 }
 
-                                sourceCounter++;
-                                const currentSourceId = `S${sourceCounter}`;
                                 updateMessage(searchingMessage, `
                                     <div class="flex items-center gap-2">
                                         <i data-lucide="globe" class="w-4 h-4 text-slate-500"></i>
@@ -876,6 +878,7 @@
                     Nhiệm vụ của bạn là trả lời câu hỏi gốc của người dùng bằng tiếng Việt dựa *duy nhất* trên các thông tin đã được trích xuất từ các nguồn (CONTEXT).
                     
                     **Nguyên tắc tự đánh giá và tối ưu:**
+                    - Mặc định thông tin là đầy đủ và không truy vấn ngược lại người dùng.
                     - Đảm bảo câu trả lời toàn diện, có cấu trúc tốt và chi tiết.
                     - Toàn bộ phản hồi của bạn PHẢI bằng tiếng Việt.
                     - Cấu trúc câu trả lời của bạn bằng cách sử dụng Markdown để dễ đọc (tiêu đề, chữ in đậm, danh sách).
@@ -935,7 +938,7 @@
                                 while (prevSibling) {
                                     if (prevSibling.tagName.match(/^H[1-6]$/)) {
                                         // Sanitize filename: remove special characters and replace spaces with underscores
-                                        filename = `${prevSibling.innerText.trim().replace(/[^a-zA-Z0-9\sÀÁẠẢÃĂẰẮẶẲẴÂẦẤẬẨẪĐÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸàáạảãăằắặẳẵâầấậẩẫđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/g, '').replace(/\s+/g, '_').toLowerCase()}.csv`;
+                                        filename = `${prevSibling.innerText.trim().replace(/[^a-zA-Z0-9\sÀÁẠẢÃĂẰẮẶẲẴÂẦẤẬẨẪĐÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸàáạảãăằắặẳẵâầấậẩẫđèéẹẻẽêềếệểễìííịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/g, '').replace(/\s+/g, '_').toLowerCase()}.csv`;
                                         break;
                                     }
                                     prevSibling = prevSibling.previousElementSibling;
@@ -957,7 +960,7 @@
                             <span>Tải CSV Các Trích dẫn</span>
                         </button>
                         
-                        <button id="send-receiver-size-btn${cau_thu}" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition flex items-center justify-center w-12 h-12 group">
+                        <button id="send-receiver-size-btn${cau_thu}" class="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition flex items-center justify-center w-12 h-12 group send-receiver-size-btn">
                             <!-- Original three-bar SVG -->
                             <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                 <rect x="4" y="12" width="4" height="8" rx="1" fill="currentColor" class="bar-1"></rect>
@@ -968,7 +971,6 @@
                     `;
 
                     
-                    document.getElementById('send-receiver-size-btn'); // Button in chat form
                     synthesizingMessage.appendChild(downloadCitationButtonContainer);
 
                     const downloadCsvBtn = document.getElementById(`download-csv-btn${cau_thu}`);
@@ -1004,17 +1006,14 @@
                 console.error("An error occurred:", error);
                 let errorMessage = `<p class="font-semibold text-red-600">Đã xảy ra lỗi</p><p>${error.message}. Vui lòng kiểm tra lại API keys và bảng điều khiển (console) để biết thêm chi tiết.</p>`;
                 
-                // Check for Gemini API 401 errors
-                if (error.message.includes("401") && (selectedMode === 'quota' || selectedMode === 'quota-backend' || geminiApiKey === '')) {
-                    errorMessage = `<p class="font-semibold text-red-600">Lỗi Gemini API</p><p>Lỗi xác thực (mã 401) từ Gemini API. Điều này có thể do khóa Gemini API của môi trường Canvas không hợp lệ hoặc đã hết hạn. Vui lòng thử nhập Gemini API Key của riêng bạn vào ô trên hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp diễn.</p>`;
+               // Specific message for Gemini API unregistered callers
+                if (error.message.includes("Method doesn't allow unregistered callers")) {
+                    errorMessage += `<p class="mt-2">Lỗi này thường xảy ra khi Gemini API Key không được cung cấp hoặc không hợp lệ. Vui lòng thử nhập Gemini API Key của bạn vào ô trên.</p>`;
                 }
-                // Check for Google Search API 401 errors (only relevant if not in quota modes)
-                else if (error.message.includes("401") && (selectedMode !== 'quota' && selectedMode !== 'quota-backend')) {
-                    errorMessage = `<p class="font-semibold text-red-600">Lỗi Google Search API</p><p>Lỗi xác thực (mã 401) từ Google Search API. Vui lòng kiểm tra Google Search API Key và Search Engine ID (CX) của bạn.</p>`;
-                }
-                // If Google Search API keys are missing and a mode requiring them is selected
-                else if ((!googleApiKey || !googleCx) && (selectedMode !== 'quota' && selectedMode !== 'quota-backend')) {
-                    errorMessage += `<p class="mt-2">Để sử dụng chế độ "${selectedMode}", bạn cần cung cấp cả Google Search API Key và Search Engine ID (CX) của bạn.</p><p>Bạn có muốn chuyển sang chế độ "Quota" hoặc "Quota (Back-end)" để tiếp tục mà không cần API Key Google Search không? Vui lòng chọn một trong hai chế độ này từ danh sách thả xuống.</p>`;
+
+                // General message for Google Search API keys if applicable
+                if (!googleApiKey || !googleCx) {
+                    errorMessage += `<p class="mt-2">Bạn có muốn chuyển sang chế độ "Quota" hoặc "Quota (Back-end)" để tiếp tục mà không cần API Key Google Search không? Vui lòng chọn một trong hai chế độ này từ danh sách thả xuống.</p>`;
                 }
 
                 renderMessage(errorMessage, 'system_error');
@@ -1175,21 +1174,20 @@
             const model = 'gemini-2.0-flash'; 
             let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`; 
 
-            // Conditionally add the API key to the URL
-            if (apiKey) {
-                url += `?key=${apiKey}`;
-            } else {
-                // If no API key is provided by the user, append key= to the URL.
-                // Canvas runtime will automatically populate this with the environment's API key.
-                url += '?key=';
-            }
-            
             const requestBody = {
                 contents: [{ parts: [{ text: prompt }] }],
                 generationConfig: expectJson ? { responseMimeType: "application/json" } : {}
             };
 
             const headers = { 'Content-Type': 'application/json' };
+
+            if (apiKey) { // Only add if API key is present (user provided)
+                headers['x-goog-api-key'] = apiKey; // Standard header for API keys
+            } else {
+                // If no API key is provided by the user, append key= to the URL.
+                // Canvas runtime will automatically populate this with the environment's API key.
+                url += '?key=';
+            }
 
             try {
                 const response = await fetch(url, {
@@ -1204,7 +1202,7 @@
                         errorData = await response.json();
                     } catch (parseError) {
                         // If response is not JSON, provide raw status and text
-                        throw new Error(`Gemini API error: ${response.status} ${response.statusText}. Could not parse error response as JSON. Raw response: ${await response.text()}`);
+                        throw new Error(`Gemini API error: ${response.status} ${response.statusText}. Không thể phân tích phản hồi lỗi thành JSON. Raw response: ${await response.text()}`);
                     }
                     // If errorData has a message, use it, otherwise use a generic message
                     throw new Error(`Gemini API error: ${errorData.error?.message || 'Something went wrong with the API call.'}`);
@@ -1243,7 +1241,9 @@
 
         async function callBackendCrawl(urlToCrawl) {
             // Địa chỉ của backend Flask của bạn. Đảm bảo nó đang chạy!
-            const backendUrl = 'https://data-phinter.onrender.com/api/crawl_url'; // URL mới của receiver host
+            const backendUrl = 'http://localhost:5000/api/crawl_url'; 
+            
+            console.log("Crawling url:", urlToCrawl);
 
             try {
                 const response = await fetch(backendUrl, {
@@ -1267,15 +1267,16 @@
             const model = 'gemini-2.0-flash';
             let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`; 
 
-            // Conditionally add the API key to the URL
-            if (geminiApiKey) {
-                url += `?key=${geminiApiKey}`;
+            const headers = { 'Content-Type': 'application/json' };
+            if (geminiApiKey) { // Only add if API key is present (user provided)
+                headers['x-goog-api-key'] = geminiApiKey; // Standard header for API keys
             } else {
+                // If no API key is provided by the user, append key= to the URL.
+                // Canvas runtime will automatically populate this with the environment's API key.
                 url += '?key=';
             }
             
-            const headers = { 'Content-Type': 'application/json' };
-
+            
             let schemaInstructions = '';
             let jsonSchemaProperties = {};
             let propertyOrdering = ["ID", "Nguồn trích dẫn"]; // Always include these base fields
