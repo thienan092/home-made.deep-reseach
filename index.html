@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Thought-Spinning Bot</title>
+
+    <!-- ICON LUCIDE BOT CHO FAVICON -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg%20width='64'%20height='64'%20viewBox='0%200%2024%2024'%20xmlns='http://www.w3.org/2000/svg'%20fill='%23374151'%20stroke='none'%3E%3Cpath%20d='M12%208V4H8'/%3E%3Crect%20width='16'%20height='12'%20x='4'%20y='8'%20rx='2'/%3E%3Cpath%20d='M2%2014h2'/%3E%3Cpath%20d='M20%2014h2'/%3E%3Cpath%20d='M15%2013v2'/%3E%3Cpath%20d='M9%2013v2'/%3E%3C/svg%3E">
+
     <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Marked.js for rendering Markdown from Gemini -->
@@ -121,7 +125,7 @@
             width: 100vw;
             left: 0; /* Ensure it takes full width from left */
             right: 0; /* Ensure it takes full width to right */
-            padding: 0; /* Ensure no padding in fullscreen mode */
+            padding: 0; /* Remove padding in fullscreen mode to avoid cutting header */
         }
 
         /* Iframe visibility */
@@ -138,14 +142,14 @@
             display: none; /* Hidden by default */
             justify-content: space-between;
             align-items: center;
-            padding-bottom: 1rem; /* Add padding below header */
+            /* Remove negative margins that caused overflow */
+            padding: 1rem; /* Consistent padding for header */
             background-color: #1e293b; /* Dark header for fullscreen */
             color: white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin: -1rem -1rem 1rem -1rem; /* Adjust for container padding */
-            padding: 1rem;
-            border-top-right-radius: 0.75rem; /* Rounded corners for header */
-            border-top-left-radius: 0.75rem;
+            /* Adjust border-radius for the header itself */
+            border-top-right-radius: 0; /* No rounded corners for header in fullscreen */
+            border-top-left-radius: 0; /* No rounded corners for header in fullscreen */
         }
 
         #receiver-container.state-fullscreen .receiver-header { /* Renamed */
@@ -215,6 +219,25 @@
         .send-receiver-size-btn {
             display: none;
         }
+
+        /* --- CSS MỚI CHO ICON CÀ PHÊ --- */
+        @keyframes steam-rise {
+            0% { transform: translateY(0); opacity: 0; }
+            40% { opacity: 0.9; }
+            80% { transform: translateY(-12px); opacity: 0; }
+            100% { transform: translateY(-12px); opacity: 0; }
+        }
+        .coffee-steam {
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            animation: steam-rise 3s infinite ease-in-out;
+            opacity: 0;
+        }
+        .coffee-steam.steam-1 { animation-delay: 0s; }
+        .coffee-steam.steam-2 { animation-delay: 1s; }
+        .coffee-steam.steam-3 { animation-delay: 1.8s; }
+        /* --- KẾT THÚC CSS MỚI --- */
     </style>
 </head>
 <body>
@@ -272,9 +295,9 @@
                 </div>
                 <div class="bg-slate-100 text-slate-800 rounded-lg p-3 max-w-full">
                     <p class="font-semibold mb-2">Hello! How can I help you?</p>
-                    <p class="text-sm">Please enter your <span class="font-bold">Google Search API key</span> and <span class="font-bold">Search Engine ID (CX)</span> by clicking the key icon above, if you want to use "Limited", "Unlimited" or "Back-end" search modes.</p>
-                    <p class="text-sm mt-2">Select your desired search mode (default is "Limited").</p>
-                    <p class="text-sm mt-3">Do you want to switch to "Quota" or "Quota (Back-end simulated)" mode to continue without a Google Search API key? Please select one of these modes from the dropdown list.</p>
+                    <p class="text-sm">Please enter your <span class="font-bold">Gemini Flash API key</span> to use the bot. This key is required for all search modes, including "Quota" modes.</p>
+                    <p class="text-sm mt-2">If you want to use "Limited", "Unlimited" or "Back-end" search modes, you also need to provide your <span class="font-bold">Google Search API key</span> and <span class="font-bold">Search Engine ID (CX)</span> by clicking the key icon above.</p>
+                    <p class="text-sm mt-3">Select your desired search mode (default is "Limited").</p>
                 </div>
             </div>
         </div>
@@ -320,8 +343,23 @@
 
     <!-- Iframe Bookmark Tab -->
     <div id="iframe-bookmark-tab" class="z-50">
-        <button id="open-receiver-button" class="send-receiver-size-btn flex flex-col items-center justify-center text-white p-2">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook">
+        <button id="open-receiver-button" class="flex items-center justify-center text-white w-full h-full">
+            <!-- Icon Phân tích Dữ liệu (hiển thị ở trạng thái bookmark) -->
+            <svg id="data-coffee-icon" width="32" height="32" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
+                <g>
+                    <!-- Phin cà phê -->
+                    <path d="M14 28 L50 28 L48 50 L16 50 Z" />
+                    <rect x="12" y="24" width="40" height="4" rx="2" />
+                    <rect x="28" y="16" width="8" height="8" rx="2" />
+                    <rect x="10" y="50" width="44" height="4" rx="2" />
+                    <!-- Hơi nóng bốc lên -->
+                    <path class="coffee-steam steam-1" d="M24 22 Q 28 16, 32 22" fill="none" />
+                    <path class="coffee-steam steam-2" d="M32 22 Q 36 16, 40 22" fill="none" />
+                    <path class="coffee-steam steam-3" d="M28 20 Q 32 14, 36 20" fill="none" />
+                </g>
+            </svg>
+            <!-- Icon Quyển sổ (hiển thị ở các trạng thái khác) -->
+            <svg id="notebook-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-notebook hidden">
                 <path d="M2 6h4" />
                 <path d="M2 10h4" />
                 <path d="M2 14h4" />
@@ -358,26 +396,31 @@
 
         // Suggest Information Extraction button
         const suggestExtractionButton = document.getElementById('suggest-extraction-button'); 
+        
+        // THAY ĐỔI: Lấy element của các icon mới
+        const dataCoffeeIcon = document.getElementById('data-coffee-icon');
+        const notebookIcon = document.getElementById('notebook-icon');
+
 
         let citationData = []; // Array to store structured citation data
         let uniqueCounter = 0; // Counter for unique IDs, used for citation download button
         let sstData = [];
         let sstSchema = [
             { field: "ID", headerName: "ID" },
-            { field: "Price Status", headerName: "Price Status" }, 
-            { field: "Product", headerName: "Product" }, 
-            { field: "Brand", headerName: "Brand" }, 
+            { field: "Update Status", headerName: "Price Updated?" }, 
+            { field: "Product", headerName: "Product Name" }, 
+            { field: "Brand", headerName: "Brand Name" }, 
             { field: "Listed Price (VND)", headerName: "Listed Price (VND)" }, 
-            { field: "Date Added", headerName: "Date Added" }, 
+            { field: "Date", headerName: "Data Date" }, 
             { field: "Shipping Fee (VND)", headerName: "Shipping Fee (VND)" }, 
             { field: "Freeship Threshold (VND)", headerName: "Freeship Threshold (VND)" }, 
-            { field: "Source", headerName: "Source" }, 
-            { field: "Product Type", headerName: "Product Type" }, 
+            { field: "Source", headerName: "Citation Source" }, 
+            { field: "Product Type", headerName: "Coffee Type" }, 
             { field: "Unit", headerName: "Unit" }, 
-            { field: "Location", headerName: "Location" }, 
-            { field: "Link", headerName: "Link" }, 
-            { field: "HTML", headerName: "HTML" }, 
-            { field: "E-commerce", headerName: "E-commerce" } 
+            { field: "Location", headerName: "Sell Location" }, 
+            { field: "Link", headerName: "Product Link" }, 
+            { field: "HTML", headerName: "HTML Selector (Price)" }, 
+            { field: "E-commerce", headerName: "E-commerce Platform" } 
         ];
 
         let currentIframeState = 'bookmark'; // Initial state
@@ -407,6 +450,20 @@
             propertyOrdering: ["queries", "output_schema", "analysis"]
         };
 
+        // Define a schema for the simulated search results
+        const searchResultsSchema = {
+            type: "ARRAY",
+            items: {
+                type: "OBJECT",
+                properties: {
+                    "title": { "type": "STRING" },
+                    "snippet": { "type": "STRING" },
+                    "url": { "type": "STRING" }
+                },
+                propertyOrdering: ["title", "snippet", "url"]
+            }
+        };
+
         // Function to update iframe state
         function setIframeState(newState, disableTransition = false) { 
             console.log(`Setting iframe state to: ${newState}, disableTransition: ${disableTransition}`);
@@ -421,6 +478,16 @@
             receiverContainer.classList.remove('state-bookmark', 'state-partial', 'state-fullscreen');
             receiverContainer.classList.add(`state-${newState}`);
             currentIframeState = newState;
+            
+            // THAY ĐỔI: Logic chuyển đổi icon
+            if (newState === 'bookmark') {
+                dataCoffeeIcon.classList.remove('hidden');
+                notebookIcon.classList.add('hidden');
+            } else {
+                dataCoffeeIcon.classList.add('hidden');
+                notebookIcon.classList.remove('hidden');
+            }
+
 
             // Handle fullscreen header display
             if (newState === 'fullscreen') {
@@ -510,7 +577,7 @@
                 suggestionsContainer.appendChild(button);
             });
         }
-
+        
         /**
          * Suggests optimized questions for structured SST information extraction from Gemini.
          * @param {string} originalUserQuestion - The user's original question.
@@ -521,26 +588,26 @@
         async function suggestSSTQuestion(originalUserQuestion, geminiApiKey, analysisResponse) {
             const sstSchemaDescription = `
                 Description of SST data columns:
-                - ID: Unique identifier for each record (product/data).
-                - Price Status: Status of price update (checked/unchecked).
-                - Product: Name or brief description of the product.
-                - Brand: Manufacturer/brand name of the product.
-                - Listed Price (VND): Public price in VND.
-                - Date Added: Date information was added to the system (keep cell of this field empty).
-                - Shipping Fee (VND): Estimated shipping cost in VND.
-                - Freeship Threshold (VND): Minimum order value for free shipping in VND.
-                - Source: Origin of information (website, store).
-                - Product Type: Product classification (e.g., "Instant Coffee", "Coffee Beans").
-                - Unit: Unit of measurement (pack, box, kg).
-                - Location: Area where the product is available or price was collected.
-                - Link: Detailed product URL.
-                - HTML: CSS Selector/XPath to locate the price on the webpage.
-                - E-commerce: E-commerce platform (Shopee, Lazada).
+                - "ID": Unique identifier for each record (keep it empty by now).
+                - "Update Status": Status of price update (keep it empty by now).
+                - "Product": Name or brief description of the product.
+                - "Brand": Manufacturer/brand name of the product.
+                - "Listed Price (VND)": Public price in VND.
+                - "Date": Date information was added to the system (keep it empty by now).
+                - "Shipping Fee (VND)": Estimated shipping cost in VND.
+                - "Freeship Threshold (VND)": Minimum order value for free shipping in VND.
+                - "Source": Origin of information (website, store).
+                - "Product Type": Product classification (e.g., "robusta", "arabica", "blend").
+                - "Unit": Unit of measurement (pack, box, kg).
+                - "Location": Area where the product is available or price was collected.
+                - "Link": Detailed product URL.
+                - "HTML": CSS Selector/XPath to locate the price on the webpage.
+                - "E-commerce": E-commerce Platform (Shopee, Lazada).
             `;
 
             const prompt = `
                 You are a professional AI assistant, capable of self-assessment and optimizing user questions to obtain structured data.
-                Your task is to review the user's original question and existing analysis information (search queries, desired output schema) to create a new, concise, natural question in Vietnamese.
+                Your task is to review the user's original question and its current AI-returned analysis information (search queries, desired output schema) to create a new, concise, natural question in the user's native language.
                 This new question must retain the user's original intent and be designed to maximize the AI model's ability to return information in a table format, strictly adhering to the given SST data schema. Specifically, the suggested question should include phrases like 'structured data', 'in table format', or refer to price/product information fields from the SST schema to encourage structured responses.
                 Use the detailed description of each SST column to understand their semantics.
                 Ensure the suggestion is consistent with the generated search queries.
@@ -725,12 +792,12 @@
                     Your task is to analyze the user's question and generate 3 to 5 simple and effective Google search queries to gather the necessary information to provide a comprehensive answer.
                     
                     **Self-assessment and Optimization Principles:**
-                    - If the user's question specifies a particular output data structure (e.g., "in the following structure: ID, Product, Brand,..."), extract these column headers.
+                    - If the user's question specifies a particular output data structure, extract these column headers.
                     - If the question seems ambiguous (e.g., "AAA"), suggest potential meanings and generate queries for each meaning, or if possible, ask the user for clarification. (Note: In the current environment, it's difficult to directly ask the user, prioritize generating queries for common meanings).
                     - Ensure search queries are broad enough to cover the topic but also specific enough to return relevant results.
-                    - Based on the provided SST schema, generate 2-3 related SST data questions that the user might ask to receive similar structured data. These suggestions must be natural questions in Vietnamese.
+                    - Based on the provided SST schema, generate 2-3 related SST data questions that the user might ask to receive similar structured data. These suggestions must be natural questions in the user's native language.
 
-                    The user's question is in Vietnamese. Your search queries must also be in Vietnamese.
+                    If the user's question is in English, your search queries must also be in English.
                     If the user's question refers to a specific time period (e.g., "yesterday", "last week", "year 2023"), use this date information in your queries.
                     Yesterday was: "${yesterdayDate}".
                     
@@ -751,7 +818,7 @@
                 const searchQueries = analysisResponse.queries; 
                 // Ensure output_schema always contains SST fields if user requested a table
                 let desiredSchemaHeaders = analysisResponse.output_schema; 
-                if (userInput.toLowerCase().includes("bảng") || userInput.toLowerCase().includes("theo cấu trúc") || userInput.toLowerCase().includes("dữ liệu có cấu trúc")) {
+                if (!desiredSchemaHeaders) {
                     desiredSchemaHeaders = sstSchema.map(s => s.field);
                 }
                 const analysisText = analysisResponse.analysis || ''; 
@@ -816,7 +883,7 @@
                             ]
                             Ensure URLs are unique and plausible.
                         `;
-                        const geminiGeneratedSearchResults = await callGemini(geminiSearchPrompt, geminiApiKey, true, analysisResponseSchema); 
+                        const geminiGeneratedSearchResults = await callGemini(geminiSearchPrompt, geminiApiKey, true, searchResultsSchema); 
 
                         if (geminiGeneratedSearchResults && Array.isArray(geminiGeneratedSearchResults)) {
                             for (const item of geminiGeneratedSearchResults) { 
@@ -862,16 +929,16 @@
                                 
                                 if (extractedInfo) {
                                     citationData.push(extractedInfo); 
-                                    const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || item.snippet || 'Could not summarize main content for this source.'; 
+                                    const displaySummary = extractedInfo['Summary'] || item.snippet || 'Could not summarize main content for this source.'; 
                                     displayMessage(`
                                         <p class="font-semibold mb-1">Observed simulated page [${extractedInfo.ID || currentSourceId}] :</p>
                                         <p class="text-sm">${displaySummary}</p>
-                                        <p class="text-xs text-slate-500 mt-1">Source: <a href="${extractedInfo['Nguồn trích dẫn'] || item.url}" target="_blank" class="text-indigo-600 hover:underline">${extractedInfo['Nguồn trích dẫn'] || item.url}</a></p>
+                                        <p class="text-xs text-slate-500 mt-1">Source: <a href="${extractedInfo['Citation Source'] || item.url}" target="_blank" class="text-indigo-600 hover:underline">${extractedInfo['Citation Source'] || item.url}</a></p>
                                     `, 'system_thinking');
                                     rawSearchResults.push({ 
-                                        title: extractedInfo['Tóm tắt nội dung chính'] || `Content of: ${item.url}`,
+                                        title: extractedInfo['Summary'] || `Content of: ${item.url}`,
                                         link: item.url,
-                                        snippet: extractedInfo['Tóm tắt nội dung chính'] || simulatedContent.substring(0, 200),
+                                        snippet: extractedInfo['Summary'] || simulatedContent.substring(0, 200),
                                         id: extractedInfo.ID || currentSourceId
                                     });
                                 } else {
@@ -910,7 +977,7 @@
                         ]
                         Ensure URLs are unique and plausible.
                     `;
-                    const geminiGeneratedResults = await callGemini(geminiSearchPrompt, geminiApiKey, true, analysisResponseSchema); 
+                    const geminiGeneratedResults = await callGemini(geminiSearchPrompt, geminiApiKey, true, searchResultsSchema); 
 
                     let sourceCounter = 0; 
                     if (geminiGeneratedResults && Array.isArray(geminiGeneratedResults)) {
@@ -930,7 +997,7 @@
 
                             if (extractedInfo) {
                                 citationData.push(extractedInfo); 
-                                const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || item.snippet || 'Could not summarize main content for this source.'; 
+                                const displaySummary = extractedInfo['Summary'] || item.snippet || 'Could not summarize main content for this source.'; 
                                 rawSearchResults.push({ 
                                     title: item.title,
                                     link: item.link,
@@ -1029,16 +1096,16 @@
                                     
                                     if (extractedInfo) {
                                         citationData.push(extractedInfo); 
-                                        const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || scrapedData.content.substring(0, 200) || 'Could not summarize main content for this source.'; 
+                                        const displaySummary = extractedInfo['Summary'] || scrapedData.content.substring(0, 200) || 'Could not summarize main content for this source.'; 
                                         displayMessage(`
                                             <p class="font-semibold mb-1">Observed page [${extractedInfo.ID || currentSourceId}] :</p>
                                             <p class="text-sm">${displaySummary}</p>
-                                            <p class="text-xs text-slate-500 mt-1">Source: <a href="${extractedInfo['Nguồn trích dẫn'] || url}" target="_blank" class="text-indigo-600 hover:underline">${extractedInfo['Nguồn trích dẫn'] || url}</a></p>
+                                            <p class="text-xs text-slate-500 mt-1">Source: <a href="${extractedInfo['Citation Source'] || url}" target="_blank" class="text-indigo-600 hover:underline">${extractedInfo['Citation Source'] || url}</a></p>
                                         `, 'system_thinking');
                                         rawSearchResults.push({ 
-                                            title: extractedInfo['Tóm tắt nội dung chính'] || `Content of: ${url}`,
+                                            title: extractedInfo['Summary'] || `Content of: ${url}`,
                                             link: url,
-                                            snippet: extractedInfo['Tóm tắt nội dung chính'] || scrapedData.content.substring(0, 200), // Use summary or part of content as snippet
+                                            snippet: extractedInfo['Summary'] || scrapedData.content.substring(0, 200), // Use summary or part of content as snippet
                                             id: extractedInfo.ID || currentSourceId
                                         });
                                     } else {
@@ -1100,7 +1167,7 @@
 
                                 if (extractedInfo) {
                                     citationData.push(extractedInfo); 
-                                    const displaySummary = extractedInfo['Tóm tắt nội dung chính'] || item.snippet || 'Could not summarize main content for this source.'; 
+                                    const displaySummary = extractedInfo['Summary'] || item.snippet || 'Could not summarize main content for this source.'; 
                                     rawSearchResults.push({ 
                                         title: item.title,
                                         link: item.link,
@@ -1155,58 +1222,102 @@
                             contentParts.push(`Structured Data: ${JSON.stringify(structuredData)}`);
                         }
                     } else { // Fallback to general structured data if no specific schema
-                        if (c['Các điểm dữ liệu quan trọng'] && Object.keys(c['Các điểm dữ liệu quan trọng']).length > 0) {
-                            contentParts.push(`Key Data Points: ${JSON.stringify(c['Các điểm dữ liệu quan trọng'])}`);
+                        if (c['Key data points'] && Object.keys(c['Key data points']).length > 0) {
+                            contentParts.push(`Key Data Points: ${JSON.stringify(c['Key data points'])}`);
                         }
-                        if (c['Tóm tắt nội dung chính']) {
-                            contentParts.push(`Summary: ${c['Tóm tắt nội dung chính']}`);
+                        if (c['Summary']) {
+                            contentParts.push(`Summary: ${c['Summary']}`);
                         } else {
                             // Fallback to original snippet if available, or just URL
                             const originalSnippet = rawSearchResults.find(rs => rs.id === c.ID)?.snippet; 
                             if (originalSnippet) {
                                 contentParts.push(`Content: ${originalSnippet}`);
                             } else {
-                                contentParts.push(`Content of: ${c['Nguồn trích dẫn']}`);
+                                contentParts.push(`Content of: ${c['Citation Source']}`);
                             }
                         }
                     }
                     
-                    return `Source ID: ${c.ID}\nURL: ${c['Nguồn trích dẫn']}\n${contentParts.join('\n')}`;
+                    return `Source ID: ${c.ID}\nURL: ${c['Citation Source']}\n${contentParts.join('\n')}`;
                 }).join('\n\n----- New Source -----\n\n');
+
+                // Define the new schema for synthesisPrompt response
+                const synthesisResponseSchema = {
+                    type: "OBJECT",
+                    properties: {
+                        "answer": { "type": "STRING" },
+                        "column_semantics": {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    "original_name": { "type": "STRING" },
+                                    "description": { "type": "STRING" },
+                                    "expected_format": { "type": "STRING" },
+                                    "typical_values": { type: "ARRAY", items: { type: "STRING" } }, // Changed to typical_values (array)
+                                    "value_mapping": { // New field for categorical columns
+                                        type: "ARRAY",
+                                        items: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                "category_name": { "type": "STRING" },
+                                                "keywords": { type: "ARRAY", items: { type: "STRING" } },
+                                                "exclude_keywords": { type: "ARRAY", items: { type: "STRING" } },
+                                                "description": { "type": "STRING" }
+                                            },
+                                            propertyOrdering: ["category_name", "keywords", "exclude_keywords", "description"]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    propertyOrdering: ["answer", "column_semantics"]
+                };
 
                 // Final prompt to generate the answer in a general manner
                 const synthesisPrompt = `
                     You are a professional AI research assistant, capable of self-assessment and optimizing output.
-                    Your task is to answer the user's original question in Vietnamese *only* based on the information extracted from the sources (CONTEXT).
+                    Your task is to answer the user's original question in the user's native language *only* based on the information extracted from the sources (CONTEXT).
                     
                     **Self-assessment and Optimization Principles:**
                     - By default, assume the information is complete and does not require user clarification.
                     - Ensure the answer is comprehensive, well-structured, and detailed.
-                    - Your entire answer MUST be in Vietnamese.
+                    - Your entire answer MUST be in the user's native language.
                     - Structure your answer using Markdown for better readability (headings, bold, lists).
-                    - **If the user requested a specific data structure (e.g., CSV columns), present the information in a Markdown table with those columns. Ensure all requested columns are present in the table, even if values are empty. Additionally, provide this data as an array of JSON objects in the 'structured_data' field of the response.**
+                    - **If the user requested a specific data structure (e.g., CSV columns), present the information in a Markdown table with those columns. Ensure all requested columns are present in the table, even if values are empty.**
                     - **When using information from a specific source, cite the ID of that source immediately after the information in the format (ID: [Source ID]). For example: "Robusta coffee reached a maximum price of 50,000 VND (ID: S1)."**
                     - If the context is insufficient to fully answer the question or find specific requested information, clearly state that you could not find enough information in the provided sources. Do not invent information.
-                    - Do not use ANY information outside the provided CONTEXT.
+                    - Do-not use ANY information outside the provided CONTEXT.
                     - Do not mention that you are relying on the provided context for the answer. Just answer the question directly.
                     - **Consistency Check:** If there is conflicting information between sources, report the contradiction or try to synthesize the information cautiously, indicating uncertainty if necessary.
+
+                    **Crucially, if you generate a Markdown table, you MUST also provide semantic information about each column in the 'column_semantics' field of the JSON response.**
+                    For each column in the generated Markdown table, provide:
+                    - 'original_name': The exact column header as it appears in your Markdown table.
+                    - 'description': A brief explanation of what this column represents.
+                    - 'expected_format': The expected data format (e.g., "string", "integer", "float", "date (YYYY-MM-DD)", "currency (VND)").
+                    - 'typical_values': An array of representative example values from that column. If the column is categorical and has a finite, small set of possible values, list all distinct values here. Otherwise, list a few common examples.
+                    - **If a column is categorical (e.g., "Product Type", "Category"), include a 'value_mapping' array. Each object in 'value_mapping' should have 'category_name' (string), 'keywords' (array of strings), and optionally 'exclude_keywords' (array of strings) and 'description' (string). The 'keywords' should be terms that identify items belonging to that category within the column's text values. 'exclude_keywords' can be used for more precise matching (e.g., 'robusta' but not 'arabica'). Ensure these keywords are comprehensive enough to cover common variations for the category.**
 
                     CONTEXT:
                     """
                     ${context}
                     """
 
+                    Current SST schema (if any): ${desiredSchemaHeaders}
+
                     User's original question: "${userInput}"
 
                     Return a valid JSON object with the following keys:
                     - "answer": String containing the full answer in Markdown.
-                    - "structured_data": An array of objects, where each object is a row of data. The keys of the object must strictly adhere to the fields of the sstSchema: ${JSON.stringify(sstSchema.map(s => s.field))}. If no structured data is available, return an empty array.
+                    - "column_semantics": An array of objects describing the semantic meaning of each column in any generated Markdown table. If no table is generated, this array should be empty.
                 `;
 
-                const finalResponseObj = await callGemini(synthesisPrompt, geminiApiKey, true); 
+                const finalResponseObj = await callGemini(synthesisPrompt, geminiApiKey, true, synthesisResponseSchema); 
                 const finalResponse = finalResponseObj.answer;
-                const structuredDataFromGemini = finalResponseObj.structured_data || []; // Fixed typo here
-
+                const columnSemantics = finalResponseObj.column_semantics || [];
+                
                 // Render Markdown to HTML
                 const formattedResponse = marked.parse(finalResponse); 
                 // Update message element with formatted response
@@ -1252,13 +1363,13 @@
 
                         downloadButton.addEventListener('click', () => { 
                             
-                            let filename = `summary_table_${index + 1}.csv`; 
+                            let filename = `summary_table_${uniqueCounter}_${index}.csv`; 
                             // Try to get a title from a preceding heading if available
                             let previousSibling = table.previousElementSibling; 
                             while (previousSibling) { 
                                 if (previousSibling.tagName.match(/^H[1-6]$/)) {
                                     // Sanitize filename: remove special chars and replace spaces with underscores
-                                    filename = `${previousSibling.innerText.trim().replace(/[^a-zA-Z0-9\sÀÁẠẢÃĂẰẮẶẲẴÂẦẤẬẨẪĐÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸàáạảãăằắặẳẵâầấậẩẫđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừỨỰỬỮỲÝÝỴỶỸ]/g, '').replace(/\s+/g, '_').toLowerCase()}.csv`;
+                                    filename = `${previousSibling.innerText.trim().replace(/[^a-zA-Z0-9\sÀÁẠẢÃĂẰẮẶẲẴÂẦẤẬẨẪĐÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝẴỶỸàáạảãăằắặẳẵâầấậẩẫđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừỨỰỬỮỲÝÝẎỶỸ]/g, '').replace(/\s+/g, '_').toLowerCase()}.csv`;
                                     break;
                                 }
                                 previousSibling = previousSibling.previousElementSibling; 
@@ -1270,9 +1381,8 @@
                         const sendReceiverSizeButton = document.getElementById(`send-receiver-size-button-${uniqueCounter}-${index}`); 
                         
                         // Show button if structured data is available
-                        if (structuredDataFromGemini && structuredDataFromGemini.length > 0) {
+                        if (columnHeaders.includes("Listed Price (VND)") && rows.length > 0) {
                             sendReceiverSizeButton.style.display = 'flex'; // Show the button
-                            sstData = structuredDataFromGemini; // Update sstData with data from Gemini
                         } else {
                             sendReceiverSizeButton.style.display = 'none'; // Hide button if no structured data
                         }
@@ -1280,13 +1390,15 @@
                         // --- Event listener to control receiver iframe ---
                         sendReceiverSizeButton.addEventListener('click', () => { 
                             // Send data to receiver iframe
-                            if (receiverIframe.contentWindow) { 
-                                receiverIframe.contentWindow.postMessage({ 
+                            if (receiverIframe.contentWindow) {
+                                receiverIframe.contentWindow.postMessage({
                                     type: 'SST_DATA_FROM_INDEX',
-                                    payload: {            // <--- Add "payload" key
-                                        data: sstData     // <--- Put "sstData" inside "data" key
+                                    payload: {            // <--- Thêm key "payload"
+                                        columnHeaders: columnHeaders,     // <--- Đưa "sstData" vào bên trong key "data"
+                                        rows: rows,
+                                        columnSemantics: columnSemantics // Pass the column semantics
                                     }
-                                }, 'https://data-phinter.onrender.com'); // Consider restricting target origin in production environments
+                                }, 'https://data-phinter.onrender.com'); // Consider restricting target origin in production
                             }
                                 
                             if (currentIframeState === 'partial') { 
@@ -1300,22 +1412,52 @@
                     }
                 });
 
+                // Create a container for the buttons to manage spacing
+                const buttonContainer = document.createElement('div');
+                buttonContainer.className = 'flex gap-2 mt-4'; // Added gap-2 for spacing and mt-4 for top margin
+
+                // Add a button to trigger saveColumnSemantics (example placement)
+                const saveColumnSemanticsButton = document.createElement('button');
+                saveColumnSemanticsButton.id = `save-semantics-button${uniqueCounter}`;
+                saveColumnSemanticsButton.className = 'bg-gray-500 text-white p-2 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition text-sm flex items-center gap-1';
+                saveColumnSemanticsButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-save">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <polyline points="17 21 17 13 7 13 7 21"/>
+                        <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    <span>Download Column Semantics (JSON)</span>
+                `;
+
+                buttonContainer.appendChild(saveColumnSemanticsButton);
+
+                saveColumnSemanticsButton.addEventListener('click', () => {
+                    let columnSemanticsCopy = JSON.parse(JSON.stringify(columnSemantics));
+                    if (columnSemanticsCopy.length > 0) {
+                        saveColumnSemantics(columnSemanticsCopy, `deep_search_column_semantics_${uniqueCounter}.json`);
+                    } else {
+                        displayMessage('No column semantics to download.', 'system_error');
+                    }
+                });
+
                 // Add citation download button
-                const downloadCsvButton = document.createElement('button'); 
+                const downloadCsvButton = document.createElement('button');
                 downloadCsvButton.className = "bg-green-600 text-white p-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition text-sm flex items-center gap-1";
-                downloadCsvButton.id = `download-csv-button${uniqueCounter}`; 
+                downloadCsvButton.id = `download-csv-button${uniqueCounter}`;
                 downloadCsvButton.innerHTML = `
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
                     <span>Download Citations CSV</span>
                 `;
 
-                
-                synthesisMessage.appendChild(downloadCsvButton); 
+                buttonContainer.appendChild(downloadCsvButton);
+
+                // Append the button container to synthesisMessage
+                synthesisMessage.appendChild(buttonContainer);
 
                 downloadCsvButton.addEventListener('click', () => { 
                     let citationDataCopy = JSON.parse(JSON.stringify(citationData)); 
                     if (citationDataCopy.length > 0) {
-                        exportToCsv(citationDataCopy, 'deep_search_citations.csv'); 
+                        exportToCsv(citationDataCopy, `deep_search_citations_${uniqueCounter}.csv`); 
                     } else {
                         displayMessage('No citation data to download.', 'system_error'); 
                     }
@@ -1451,15 +1593,18 @@
         }
         
         // Modified callGemini to accept an optional responseSchema
-        async function callGemini(prompt, apiKey, expectJson = false, responseSchema = null) { 
+        async function callGemini(prompt, userProvidedApiKey, expectJson = false, responseSchema = null) { 
             const model = 'gemini-2.0-flash'; 
             let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`; 
 
             const headers = { 'Content-Type': 'application/json' }; 
+            
+            // Log the API key being used for debugging
+            console.log('callGemini: Using API Key:', userProvidedApiKey ? '***' + userProvidedApiKey.substring(userProvidedApiKey.length - 4) : 'Canvas-provided (empty string)');
 
             // Conditionally add API key to URL or headers
-            if (apiKey) {
-                headers['x-goog-api-key'] = apiKey; // Standard header for API key when user provides
+            if (userProvidedApiKey) {
+                headers['x-goog-api-key'] = userProvidedApiKey; // Standard header for API key when user provides
             } else {
                 // If no API key is provided by the user, append key= to the URL.
                 // Canvas runtime will automatically populate the environment's API key.
@@ -1490,18 +1635,24 @@
                 console.log('callGemini: Response received - Status:', response.status, response.statusText);
 
                 if (!response.ok) {
-                    let errorData; 
-                    const rawErrorText = await response.text(); // Capture raw error text first
+                    const rawErrorText = await response.text();
                     console.error('callGemini: Raw error response:', rawErrorText);
 
-                    try {
-                        errorData = JSON.parse(rawErrorText); 
-                    } catch (parseError) { 
-                        // If response is not JSON, provide raw status and text
-                        throw new Error(`Gemini API Error: ${response.status} ${response.statusText}. Could not parse error response to JSON. Raw response: ${rawErrorText.substring(0, Math.min(rawErrorText.length, 500))}`);
+                    let errorMessage = `Gemini API Error: ${response.status} ${response.statusText}.`;
+
+                    if (response.status === 401) {
+                        errorMessage = `Gemini API Error: 401 Unauthorized. Please check your Gemini API key in the input field. It might be incorrect or not properly authorized.`;
+                    } else if (rawErrorText.trim() === '') {
+                        errorMessage += ` The server did not provide a detailed error message. This often indicates a fundamental issue, such as a network problem.`;
+                    } else {
+                        try {
+                            const errorData = JSON.parse(rawErrorText);
+                            errorMessage = `Gemini API Error: ${errorData.error?.message || 'An unknown error occurred with the API call.'}`;
+                        } catch (parseError) {
+                            errorMessage += ` Could not parse error response to JSON. Raw response: ${rawErrorText.substring(0, Math.min(rawErrorText.length, 500))}`;
+                        }
                     }
-                    // If errorData has a message, use it, otherwise use generic message
-                    throw new Error(`Gemini API Error: ${errorData.error?.message || 'An error occurred with the API call.'}`);
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json(); 
@@ -1584,20 +1735,16 @@
             const model = 'gemini-2.0-flash'; 
             let url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`; 
 
-            const headers = { 'Content-Type': 'application/json' }; 
-            // Conditionally add API key to URL or headers
-            if (geminiApiKey) {
-                headers['x-goog-api-key'] = geminiApiKey; // Standard header for API key when user provides
-            } else {
-                // If no API key is provided by the user, append key= to the URL.
-                // Canvas runtime will automatically populate the environment's API key.
-                url += '?key=';
-            }
+            // Always append the key parameter to the URL.
+            // If geminiApiKey is empty, Canvas runtime will automatically populate the environment's API key.
+            // If geminiApiKey is present, it will be used.
+            url += `?key=${geminiApiKey}`; 
             
+            const headers = { 'Content-Type': 'application/json' }; 
             
             let schemaInstructions = ''; 
             let jsonSchemaProperties = {}; 
-            let propertyOrdering = ["ID", "Nguồn trích dẫn"]; // Always include these basic fields
+            let propertyOrdering = ["ID", "Citation Source"]; // Always include these basic fields
 
             if (desiredSchemaHeaders && desiredSchemaHeaders.length > 0) {
                 schemaInstructions = `
@@ -1616,18 +1763,18 @@
                 propertyOrdering = [...propertyOrdering, ...filteredDesiredHeaders]; // Only add unique desired headers
 
             } else {
-                // Modified to request 'Các điểm dữ liệu quan trọng' as a JSON string within a STRING field
+                // Modified to request 'Key data points' as a JSON string within a STRING field
                 schemaInstructions = `
                 Return a JSON object with the following fields:
-                - "Tóm tắt nội dung chính": A short paragraph (max 2-3 sentences) summarizing the most important content of the page related to the question.
-                - "Các điểm dữ liệu quan trọng_json": A JSON string representing key-value pairs of the most important information/events/data found on the page, relevant to the original question. Example: "{\\"Highest Price\\": \\"X\\", \\"Lowest Price\\": \\"Y\\", \\"Distributor\\": \\"Z\\"}". If no key data is found, leave this JSON string empty (e.g., "{}").
+                - "Summary": A short paragraph (max 2-3 sentences) summarizing the most important content of the page related to the question.
+                - "Key data points_json": A JSON string representing key-value pairs of the most important information/events/data found on the page, relevant to the original question. Example: "{\\"Highest Price\\": \\"X\\", \\"Lowest Price\\": \\"Y\\", \\"Distributor\\": \\"Z\\"}". If no key data is found, leave this JSON string empty (e.g., "{}").
                 Ensure all values are strings.
                 `;
                 jsonSchemaProperties = {
-                    "Tóm tắt nội dung chính": { "type": "STRING" },
-                    "Các điểm dữ liệu quan trọng_json": { "type": "STRING" } // Changed to STRING
+                    "Summary": { "type": "STRING" },
+                    "Key data points_json": { "type": "STRING" } // Changed to STRING
                 };
-                propertyOrdering = [...propertyOrdering, "Tóm tắt nội dung chính", "Các điểm dữ liệu quan trọng_json"]; // Add default headers to order
+                propertyOrdering = [...propertyOrdering, "Summary", "Key data points_json"]; // Add default headers to order
             }
 
             const extractionPrompt = `
@@ -1643,7 +1790,7 @@
 
                 Return a valid JSON object only. This object MUST include the following fields:
                 - "ID": A unique identifier for this source (e.g., "S1", "S2").
-                - "Nguồn trích dẫn": The full URL of the source webpage.
+                - "Citation Source": The full URL of the source webpage.
                 ${schemaInstructions}
 
                 User's original question: "${userInput}"
@@ -1664,7 +1811,7 @@
                         type: "OBJECT",
                         properties: {
                             "ID": { "type": "STRING" },
-                            "Nguồn trích dẫn": { "type": "STRING" },
+                            "Citation Source": { "type": "STRING" },
                             ...jsonSchemaProperties 
                         },
                         "propertyOrdering": propertyOrdering 
@@ -1719,20 +1866,20 @@
                     // Return default structure if parsing fails to prevent app crash
                     return {
                         ID: sourceId,
-                        "Nguồn trích dẫn": sourceUrl,
-                        "Tóm tắt nội dung chính": `Extraction error from this source. Original content might be invalid or API returned an error.`,
-                        "Các điểm dữ liệu quan trọng": {} // Ensure it's an object for consistency
+                        "Citation Source": sourceUrl,
+                        "Summary": `Extraction error from this source. Original content might be invalid or API returned an error.`,
+                        "Key data points": {} // Ensure it's an object for consistency
                     };
                 }
 
                 // If it's the general schema, parse the _json field into an object
                 if (!desiredSchemaHeaders || desiredSchemaHeaders.length === 0) { 
                     try {
-                        result['Các điểm dữ liệu quan trọng'] = JSON.parse(result['Các điểm dữ liệu quan trọng_json'] || '{}');
-                        delete result['Các điểm dữ liệu quan trọng_json']; // Remove the temporary field
+                        result['Key data points'] = JSON.parse(result['Key data points_json'] || '{}');
+                        delete result['Key data points_json']; // Remove the temporary field
                     } catch (e) {
-                        console.warn("Could not parse 'Các điểm dữ liệu quan trọng_json':", e, "Raw string:", result['Các điểm dữ liệu quan trọng_json']);
-                        result['Các điểm dữ liệu quan trọng'] = {}; // Default to empty object in case of parsing error
+                        console.warn("Could not parse 'Key data points_json':", e, "Raw string:", result['Key data points_json']);
+                        result['Key data points'] = {}; // Default to empty object in case of parsing error
                     }
                 }
                 return result;
@@ -1742,9 +1889,9 @@
                 // Return default structure if parsing fails to prevent app crash
                 return {
                     ID: sourceId,
-                    "Nguồn trích dẫn": sourceUrl,
-                    "Tóm tắt nội dung chính": `Extraction error from this source. Original content might be invalid or API returned an error: ${error.message}`,
-                    "Các điểm dữ liệu quan trọng": {} // Ensure it's an object for consistency
+                    "Citation Source": sourceUrl,
+                    "Summary": `Extraction error from this source. Original content might be invalid or API returned an error: ${error.message}`,
+                    "Key data points": {} // Ensure it's an object for consistency
                 };
             }
         }
@@ -1763,32 +1910,32 @@
         function exportToCsv(data, filename) { 
             if (data.length === 0) return;
 
-            // Collect all unique headers, including nested keys from "Các điểm dữ liệu quan trọng"
+            // Collect all unique headers, including nested keys from "Key data points"
             const allHeaders = new Set(); 
             data.forEach(row => { 
                 Object.keys(row).forEach(key => { 
-                    if (key === 'Các điểm dữ liệu quan trọng' && typeof row[key] === 'object' && row[key] !== null) {
+                    if (key === 'Key data points' && typeof row[key] === 'object' && row[key] !== null) {
                         Object.keys(row[key]).forEach(nestedKey => allHeaders.add(nestedKey)); 
-                    } else if (key !== 'Các điểm dữ liệu quan trọng_json') { // Exclude the temporary JSON string field
+                    } else if (key !== 'Key data points_json') { // Exclude the temporary JSON string field
                         allHeaders.add(key);
                     }
                 });
             });
 
             // Ensure mandatory headers are at the beginning
-            const mandatoryHeaders = ["ID", "Nguồn trích dẫn", "Tóm tắt nội dung chính"]; 
+            const mandatoryHeaders = ["ID", "Citation Source", "Summary"]; 
             let finalHeaders = mandatoryHeaders.filter(h => allHeaders.has(h)); 
-            // Add other headers, excluding "Các điểm dữ liệu quan trọng" and the temporary JSON string field
+            // Add other headers, excluding "Key data points" and the temporary JSON string field
             Array.from(allHeaders).sort().forEach(h => { 
-                if (!mandatoryHeaders.includes(h) && h !== 'Các điểm dữ liệu quan trọng' && h !== 'Các điểm dữ liệu quan trọng_json') {
+                if (!mandatoryHeaders.includes(h) && h !== 'Key data points' && h !== 'Key data points_json') {
                     finalHeaders.push(h);
                 }
             });
-            // Add nested keys from "Các điểm dữ liệu quan trọng" at the end
+            // Add nested keys from "Key data points" at the end
             const nestedHeaders = new Set(); 
             data.forEach(row => { 
-                if (row['Các điểm dữ liệu quan trọng'] && typeof row['Các điểm dữ liệu quan trọng'] === 'object') {
-                    Object.keys(row['Các điểm dữ liệu quan trọng']).forEach(key => nestedHeaders.add(key)); 
+                if (row['Key data points'] && typeof row['Key data points'] === 'object') {
+                    Object.keys(row['Key data points']).forEach(key => nestedHeaders.add(key)); 
                 }
             });
             Array.from(nestedHeaders).sort().forEach(h => finalHeaders.push(h)); 
@@ -1800,8 +1947,8 @@
                 const rowValues = finalHeaders.map(header => { 
                     if (row.hasOwnProperty(header)) {
                         return escapeCsv(row[header]);
-                    } else if (row['Các điểm dữ liệu quan trọng'] && typeof row['Các điểm dữ liệu quan trọng'] === 'object' && row['Các điểm dữ liệu quan trọng'].hasOwnProperty(header)) {
-                        return escapeCsv(row['Các điểm dữ liệu quan trọng'][header]);
+                    } else if (row['Key data points'] && typeof row['Key data points'] === 'object' && row['Key data points'].hasOwnProperty(header)) {
+                        return escapeCsv(row['Key data points'][header]);
                     }
                     return ''; // Empty string for missing values
                 });
@@ -1821,6 +1968,26 @@
             } else {
                 displayMessage('Your browser does not support direct CSV download.', 'system_error'); 
             }
+        }
+        
+        
+
+        // Function to save columnSemantics to a JSON file
+        function saveColumnSemantics(columnSemantics, filename) {
+            if (columnSemantics.length === 0) {
+                alert('Không có dữ liệu ngữ nghĩa cột để lưu.');
+                return;
+            }
+            const jsonString = JSON.stringify(columnSemantics, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
         }
 
         function exportSimpleTableToCsv(columnHeaders, rows, filename) { 
