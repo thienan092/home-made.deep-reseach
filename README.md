@@ -4,4 +4,4 @@
 
 ## Giấy phép
 
-Dự án này được cấp phép theo Giấy phép Apache, Phiên bản 2.0. Xem tệp [LICENSE](LICENSE) để biết thêm chi tiết.
+Dự án này được cấp phép theo Giấy phép Apache, Phiên bản 2.0. Xem tệp [`LICENSE`](LICENSE) để biết thêm chi tiết.
