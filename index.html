@@ -408,7 +408,7 @@
             { field: "Freeship Threshold (VND)", headerName: "Freeship Threshold (VND)" }, 
             { field: "Source", headerName: "Citation Source" }, 
             { field: "Product Type", headerName: "Coffee Type" }, 
-            { field: "Unit", headerName: "Unit" }, 
+            { field: "Net Weight", headerName: "Net Weight" }, 
             { field: "Location", headerName: "Sell Location" }, 
             { field: "Link", headerName: "Product Link" }, 
             { field: "HTML", headerName: "HTML Selector (Price)" }, 
@@ -590,7 +590,7 @@
                 - "Freeship Threshold (VND)": Minimum order value for free shipping in VND.
                 - "Source": Origin of information (website, store).
                 - "Product Type": Product classification (e.g., "robusta", "arabica", "blend").
-                - "Unit": Unit of measurement (pack, box, kg).
+                - "Net Weight": The net weight accompanied by the corresponding unit of measurement (pound, kg).
                 - "Location": Area where the product is available or price was collected.
                 - "Link": Detailed product URL.
                 - "HTML": CSS Selector/XPath to locate the price on the webpage.
@@ -1286,7 +1286,7 @@
                     - 'original_name': The exact column header as it appears in your Markdown table.
                     - 'description': A brief explanation of what this column represents.
                     - 'expected_format': The expected data format (e.g., "string", "integer", "float", "date (YYYY-MM-DD)", "currency (VND)").
-                    - 'typical_values': An array of representative example values from that column. If the column is categorical and has a finite, small set of possible values, list all distinct values here. Otherwise, list a few common examples.
+                    - 'typical_values': An array of representative example values from that column. If the column is categorical, list all distinct values here (identical to values of 'category_name' in the 'value_mapping' array below). Otherwise, list a few common examples.
                     - **If a column is categorical (e.g., "Product Type", "Category"), include a 'value_mapping' array. Each object in 'value_mapping' should have 'category_name' (string), 'keywords' (array of strings), and optionally 'exclude_keywords' (array of strings) and 'description' (string). The 'keywords' should be terms that identify items belonging to that category within the column's text values. 'exclude_keywords' can be used for more precise matching (e.g., 'robusta' but not 'arabica'). Ensure these keywords are comprehensive enough to cover common variations for the category.**
 
                     CONTEXT:
