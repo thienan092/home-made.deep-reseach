@@ -330,7 +330,7 @@
                 </svg>
             </button>
         </div>
-        <iframe id="receiver-iframe" src="https://data-phinter.onrender.com/" title="Receiver Server" class="w-full h-full border-none rounded-lg"></iframe>
+        <iframe id="receiver-iframe" src="http://localhost:5400/" title="Receiver Server" class="w-full h-full border-none rounded-lg"></iframe>
     </div>
 
     <!-- Iframe Bookmark Tab -->
@@ -1380,7 +1380,7 @@
                                         rows: rows,
                                         columnSemantics: columnSemantics // Pass the column semantics
                                     }
-                                }, 'https://data-phinter.onrender.com'); // Consider restricting target origin in production
+                                }, 'http://localhost:5400'); // Consider restricting target origin in production
                             }
                                 
                             if (currentIframeState === 'partial') { 
@@ -1687,9 +1687,6 @@
             // Your Flask backend address. Make sure it's running!
             // Make this configurable for generality
             const backendUrl = localStorage.getItem('backendUrl') || 'http://localhost:5000/api/crawl_url'; 
-            
-            console.log("callBackendScraper: Scraping URL:", urlToScrape);
-            console.log("callBackendScraper: Sending request to backend:", backendUrl);
 
             try {
                 const response = await fetch(backendUrl, { 

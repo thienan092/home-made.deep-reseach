@@ -1,0 +1,138 @@
+[
+  {
+    "original_name": "Sản phẩm",
+    "description": "Tên đầy đủ của sản phẩm cà phê.",
+    "expected_format": "string",
+    "typical_values": []
+  },
+  {
+    "original_name": "Thương hiệu",
+    "description": "Thương hiệu sản xuất hoặc phân phối sản phẩm cà phê.",
+    "expected_format": "string",
+    "typical_values": [],
+    "value_mapping": [
+      {
+        "category_name": "Message Coffee",
+        "keywords": ["Message Coffee"]
+      },
+      {
+        "category_name": "TaynguyenSoul",
+        "keywords": []
+      },
+      {
+        "category_name": "Dehavi Coffee",
+        "keywords": []
+      },
+      {
+        "category_name": "Eatu Café",
+        "keywords": ["Eatu Café"]
+      },
+      {
+        "category_name": "Trung Nguyên Legend",
+        "keywords": []
+      },
+      {
+        "category_name": "Highlands Coffee",
+        "keywords": ["Highlands Coffee"]
+      },
+      {
+        "category_name": "MacCoffee",
+        "keywords": ["MacCoffee"]
+      },
+      {
+        "category_name": "Phương Vy",
+        "keywords": ["Phương Vy"]
+      },
+      {
+        "category_name": "Mê Trang",
+        "keywords": []
+      },
+      {
+        "category_name": "Tây Nguyên Food - Việt Nam",
+        "keywords": []
+      }
+    ]
+  },
+  {
+    "original_name": "Nguồn",
+    "description": "Nền tảng hoặc website nơi sản phẩm được bán.",
+    "expected_format": "string",
+    "typical_values": ["messagecoffee.com", "taynguyensoul.vn", "dehavi.com", "eatucafe.com", "trungnguyenlegendcafe.net", "shop.highlandscoffee.com.vn", "shopee.vn", "bachhoaxanh.com"]
+  },
+  {
+    "original_name": "Link Mô tả",
+    "description": "Đường dẫn URL trực tiếp đến trang sản phẩm.",
+    "expected_format": "string",
+    "typical_values": ["https://messagecoffee.com/products/ca-phe-robusta-honey-nguyen-chat-rang-moc-100-vi-dang-dam-hau-ngot-thom-nong-dung-pha-phin-pha-may-tu-message-coffee", "https://taynguyensoul.vn/san-pham/ca-phe-rang-xay-nguyen-chat-mashup/", "N/A"]
+  },
+  {
+    "original_name": "Loại SP",
+    "description": "Loại hạt cà phê hoặc tỷ lệ pha trộn chính của sản phẩm, bao gồm các chú thích về tùy chọn nếu có.",
+    "expected_format": "string",
+    "typical_values": [],
+    "value_mapping": [
+      {
+        "category_name": "Robusta",
+        "keywords": ["Robusta", "robusta"],
+        "exclude_keywords": []
+      },
+      {
+        "category_name": "Arabica",
+        "keywords": ["Arabica", "arabica"],
+        "exclude_keywords": []
+      },
+      {
+        "category_name": "Blend",
+        "keywords": ["Blend", "blend"],
+        "exclude_keywords": []
+      },
+      {
+        "category_name": "Specialty Coffee",
+        "keywords": ["culi", "decaf", "hòa tan", "moka", "đặc sản", "specialty"],
+        "exclude_keywords": []
+      }
+    ]
+  },
+  {
+    "original_name": "Khối lượng tịnh",
+    "description": "Đơn vị và khối lượng tịnh của sản phẩm.",
+    "expected_format": "string",
+    "typical_values": ["200 g", "500 g", "250 g", "340 g", "1 kg", "Hộp 10 túi x 20gr", "Hộp 10 gói", "10 Kg", "3x200 g", "24x185 ml", "450 g", "100 g"]
+  },
+  {
+    "original_name": "Giá niêm yết (VND)",
+    "description": "Giá bán niêm yết của sản phẩm bằng Đồng Việt Nam.",
+    "expected_format": "currency (VND)",
+    "typical_values": []
+  },
+  {
+    "original_name": "Phí ship (VND) (Nội thành HCM)",
+    "description": "Chi phí vận chuyển ước tính cho đơn hàng trong nội thành TP.HCM. Có thể là một khoảng giá hoặc chính sách chung.",
+    "expected_format": "string",
+    "typical_values": []
+  },
+  {
+    "original_name": "Ngưỡng Freeship (VND)",
+    "description": "Giá trị đơn hàng tối thiểu để được miễn phí vận chuyển. Có thể là một giá trị cụ thể hoặc chính sách chung.",
+    "expected_format": "string",
+    "typical_values": []
+  },
+  {
+    "original_name": "Tại Địa Phương",
+    "description": "Phạm vi địa lý mà sản phẩm được bán hoặc giao hàng.",
+    "expected_format": "string",
+    "typical_values": []
+  },
+  {
+    "original_name": "HTML",
+    "description": "HTML selector được sử dụng để trích xuất giá sản phẩm từ Link Mô tả. Có thể là một chuỗi selector hoặc 'N/A' nếu không có.",
+    "expected_format": "string",
+    "typical_values": []
+  },
+  {
+    "original_name": "TMĐT",
+    "description": "Nền tảng thương mại điện tử.",
+    "expected_format": "string",
+    "typical_values": ["shopee", "lazada"]
+  }
+]
